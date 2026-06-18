@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0D1B2A;
+  --surface: #1B3A5C;
+  --primary: #1E6FBF;
+  --success: #1A7A4A;
+  --warning: #D97706;
+  --critical: #C0392B;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D1B2A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E6FBF55;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1E6FBF;
+}
+
+/* Sidebar link active styling */
+.nav-link-active {
+  background-color: #1E6FBF22;
+  color: #1E6FBF;
+  border-left: 3px solid #1E6FBF;
+}
+
+/* Subtle pulse animation for CRITICAL events */
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-critical {
+  animation: pulse-critical 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth slide-in for new events */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out;
+}
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(27, 58, 92, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(30, 111, 191, 0.2);
+}
+
+/* Code / monospace elements */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* KPI card gradient glow */
+.kpi-glow {
+  box-shadow: 0 0 20px rgba(30, 111, 191, 0.15);
+}
+
+/* Spinner used by Vault restore button */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
