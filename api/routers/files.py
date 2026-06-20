@@ -8,7 +8,7 @@ def get_db(request: Request):
 
 @router.get("/monitored")
 def get_monitored_files(db = Depends(get_db)):
-    res = db.execute_query("SELECT file_path, tier, is_locked FROM baselines")
+    res = db.query("SELECT file_path, tier, is_locked FROM baselines")
     files = []
     for row in res:
         files.append({
@@ -20,7 +20,7 @@ def get_monitored_files(db = Depends(get_db)):
 
 @router.post("/register")
 def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
-    db.execute_write(
+    db.execute(
         "INSERT OR IGNORE INTO baselines (file_path, current_hash, tier) VALUES (?, 'PENDING', ?)",
         (file_path, tier)
     )
@@ -28,5 +28,5 @@ def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
 
 @router.delete("/unregister")
 def unregister_file(file_path: str, db = Depends(get_db)):
-    db.execute_write("DELETE FROM baselines WHERE file_path = ?", (file_path,))
+    db.execute("DELETE FROM baselines WHERE file_path = ?", (file_path,))
     return {"status": "unregistered", "file_path": file_path}

@@ -32,7 +32,7 @@ def send_resend_email(subject: str, body_html: str):
 @router.get("/")
 def get_alerts(db=Depends(get_db)):
     try:
-        res = db.execute_query(
+        res = db.query(
             "SELECT id, event_id, severity, created_at, status, alert_type, message "
             "FROM alerts ORDER BY created_at DESC LIMIT 200"
         )
@@ -55,11 +55,11 @@ def get_alerts(db=Depends(get_db)):
 @router.put("/{alert_id}/resolve")
 def resolve_alert(alert_id: int, db=Depends(get_db)):
     try:
-        db.execute_write(
+        db.execute(
             "UPDATE alerts SET status = 'RESOLVED' WHERE id = ?", (alert_id,)
         )
     except Exception:
-        db.execute_write(
+        db.execute(
             "UPDATE alerts SET status = 'RESOLVED' WHERE rowid = ?", (alert_id,)
         )
     return {"status": "resolved", "alert_id": alert_id}
@@ -67,7 +67,7 @@ def resolve_alert(alert_id: int, db=Depends(get_db)):
 
 @router.put("/{alert_id}/acknowledge")
 def acknowledge_alert(alert_id: int, db=Depends(get_db)):
-    db.execute_write(
+    db.execute(
         "UPDATE alerts SET status = 'ACKNOWLEDGED' WHERE id = ?", (alert_id,)
     )
     return {"status": "acknowledged", "alert_id": alert_id}

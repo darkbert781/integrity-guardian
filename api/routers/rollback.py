@@ -13,7 +13,7 @@ def get_rollback_engine(request: Request):
 
 @router.get("/vault")
 def get_vault(db = Depends(get_db)):
-    res = db.execute_query("SELECT id, file_path, vault_path, timestamp, file_hash FROM vault ORDER BY timestamp DESC")
+    res = db.query("SELECT id, file_path, vault_path, timestamp, file_hash FROM vault ORDER BY timestamp DESC")
     vault_entries = []
     for row in res:
         vault_entries.append({
@@ -27,7 +27,7 @@ def get_vault(db = Depends(get_db)):
 
 @router.post("/{file_id}")
 def trigger_rollback(file_id: int, db = Depends(get_db), rollback_engine = Depends(get_rollback_engine)):
-    res = db.execute_query("SELECT file_path, vault_path FROM vault WHERE id = ?", (file_id,))
+    res = db.query("SELECT file_path, vault_path FROM vault WHERE id = ?", (file_id,))
     if not res:
         raise HTTPException(status_code=404, detail="Vault entry not found")
 

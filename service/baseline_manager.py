@@ -64,25 +64,25 @@ class BaselineManager:
             last_modified = ""
             
         # Check if exists
-        existing = self.db.query("SELECT file_id, sha256_hash FROM files_baseline WHERE file_path = ?", (file_path,))
+        existing = self.db.query("SELECT id, current_hash FROM baselines WHERE file_path = ?", (file_path,))
         now = datetime.now().isoformat()
         
         if existing:
             row = existing[0]
-            if row['sha256_hash'] != sha256:
+            if row['current_hash'] != sha256:
                 # Update hash
                 self.db.execute(
-                    "UPDATE files_baseline SET sha256_hash=?, blake3_hash=?, file_size=?, last_modified=?, updated_at=? WHERE file_id=?",
-                    (sha256, blake3, size, last_modified, now, row['file_id'])
+                    "UPDATE baselines SET current_hash=? WHERE id=?",
+                    (sha256, row['id'])
                 )
                 logger.debug(f"Updated baseline for {file_path}")
         else:
             # Insert new
             self.db.execute(
-                """INSERT INTO files_baseline 
-                   (file_path, sha256_hash, blake3_hash, file_size, last_modified, tier, registered_at) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (file_path, sha256, blake3, size, last_modified, tier, now)
+                """INSERT INTO baselines 
+                   (file_path, current_hash, tier) 
+                   VALUES (?, ?, ?)""",
+                (file_path, sha256, tier)
             )
             logger.debug(f"Added {file_path} to baseline")
 
@@ -96,19 +96,19 @@ class BaselineManager:
         
         logger.info(f"Handling event: {operation} on {file_path} by {process_name}")
         
-        existing = self.db.query("SELECT file_id, sha256_hash, tier FROM files_baseline WHERE file_path = ?", (file_path,))
+        existing = self.db.query("SELECT id, current_hash, tier FROM baselines WHERE file_path = ?", (file_path,))
         
         if operation == 'DELETED':
             if existing:
-                self._dispatch_incident(existing[0]['file_id'], existing[0]['sha256_hash'], None, event)
+                self._dispatch_incident(existing[0]['id'], existing[0]['current_hash'], None, event)
             return
             
         new_sha256, new_blake3 = HashEngine.hash_file(file_path)
         
         if operation in ('CREATED', 'MODIFIED', 'RENAMED'):
             if existing:
-                old_hash = existing[0]['sha256_hash']
-                file_id = existing[0]['file_id']
+                old_hash = existing[0]['current_hash']
+                file_id = existing[0]['id']
                 if old_hash != new_sha256:
                     self._dispatch_incident(file_id, old_hash, new_sha256, event)
                     # Update baseline to reflect new reality
@@ -116,14 +116,14 @@ class BaselineManager:
             else:
                 # File created in a monitored path but wasn't in baseline yet
                 self._add_or_update_file(file_path, "standard") # Default tier
-                new_row = self.db.query("SELECT file_id FROM files_baseline WHERE file_path = ?", (file_path,))
+                new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
                 if new_row:
-                    self._dispatch_incident(new_row[0]['file_id'], None, new_sha256, event)
+                    self._dispatch_incident(new_row[0]['id'], None, new_sha256, event)
 
     def _dispatch_incident(self, file_id: int, old_hash: Optional[str], new_hash: Optional[str], event: Dict[str, Any]):
         now = datetime.now().isoformat()
         severity = "INFO"
-        row = self.db.query("SELECT tier FROM files_baseline WHERE file_id = ?", (file_id,))
+        row = self.db.query("SELECT tier FROM baselines WHERE id = ?", (file_id,))
         tier = row[0]['tier'] if row else "standard"
         
         if event['operation'] == 'DELETED' and tier == 'critical':
@@ -135,11 +135,11 @@ class BaselineManager:
             
         try:
             self.db.execute(
-                """INSERT INTO integrity_events 
-                   (file_id, event_type, severity, baseline_hash, detected_hash, file_path, process_name, process_id, source, detected_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (file_id, event['operation'], severity, old_hash, new_hash, event['file_path'], 
-                 event.get('process_name'), event.get('process_id'), event.get('source', 'watchdog'), now)
+                """INSERT INTO events 
+                   (timestamp, file_path, event_type, severity, process_id, process_name, hash_old, hash_new)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (now, event['file_path'], event['operation'], severity,
+                 event.get('process_id'), event.get('process_name'), old_hash, new_hash)
             )
             
             if old_hash != new_hash and event['operation'] != 'DELETED':

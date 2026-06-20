@@ -37,6 +37,10 @@ def startup_event():
     encryption_key = hashlib.sha256(machine_guid.encode()).hexdigest()[:32]
 
     db_manager = DatabaseManager(db_path, use_encryption=False)
+    
+    schema_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "service", "db", "schema.sql")
+    db_manager.init_schema(schema_path)
+    
     app.state.db_manager = db_manager
     app.state.config_manager = config_manager
     app.state.rollback_engine = RollbackEngine(db_manager, vault_path, encryption_key)
@@ -61,3 +65,15 @@ app.include_router(system.router)
 @app.get("/")
 def root():
     return {"status": "Integrity Guardian API Running"}
+
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
+
+@app.websocket("/ws/events")
+async def websocket_events(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            await asyncio.sleep(60)
+    except WebSocketDisconnect:
+        pass

@@ -43,7 +43,7 @@ def get_gemini_client():
 def build_context(db) -> str:
     """Pull the last 100 events from the database for context."""
     try:
-        rows = db.execute_query(
+        rows = db.query(
             "SELECT file_path, event_type, severity, timestamp, process_name "
             "FROM events ORDER BY timestamp DESC LIMIT 100"
         )
@@ -67,7 +67,7 @@ def forensic_query(req: QueryRequest, request: Request):
         # Fallback: simple keyword search without AI
         question_lower = req.question.lower()
         try:
-            rows = db.execute_query(
+            rows = db.query(
                 "SELECT id, file_path, event_type, severity, timestamp, process_name "
                 "FROM events ORDER BY timestamp DESC LIMIT 50"
             )
@@ -134,7 +134,7 @@ Instructions:
             # Return structured matches for any paths mentioned
             matched = []
             try:
-                rows = db.execute_query(
+                rows = db.query(
                     "SELECT id, file_path, event_type, severity, timestamp, process_name "
                     "FROM events ORDER BY timestamp DESC LIMIT 100"
                 )

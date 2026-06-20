@@ -27,7 +27,7 @@ def get_events(
     query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
     
-    results = db.execute_query(query, tuple(params))
+    results = db.query(query, tuple(params))
     
     count_query = "SELECT COUNT(*) FROM events WHERE 1=1"
     count_params = []
@@ -35,7 +35,7 @@ def get_events(
         count_query += " AND severity = ?"
         count_params.append(severity)
     
-    total = db.execute_query(count_query, tuple(count_params))[0][0]
+    total = db.query(count_query, tuple(count_params))[0][0]
     
     data = []
     for row in results:
@@ -57,9 +57,9 @@ def get_events(
 
 @router.get("/stats")
 def get_event_stats(db = Depends(get_db)):
-    crit = db.execute_query("SELECT COUNT(*) FROM events WHERE severity='CRITICAL'")[0][0]
-    warn = db.execute_query("SELECT COUNT(*) FROM events WHERE severity='WARNING'")[0][0]
-    info = db.execute_query("SELECT COUNT(*) FROM events WHERE severity='INFO'")[0][0]
+    crit = db.query("SELECT COUNT(*) FROM events WHERE severity='CRITICAL'")[0][0]
+    warn = db.query("SELECT COUNT(*) FROM events WHERE severity='WARNING'")[0][0]
+    info = db.query("SELECT COUNT(*) FROM events WHERE severity='INFO'")[0][0]
     return {
         "CRITICAL": crit,
         "WARNING": warn,
@@ -69,7 +69,7 @@ def get_event_stats(db = Depends(get_db)):
 
 @router.get("/{event_id}")
 def get_event(event_id: int, db = Depends(get_db)):
-    res = db.execute_query("SELECT * FROM events WHERE id = ?", (event_id,))
+    res = db.query("SELECT * FROM events WHERE id = ?", (event_id,))
     if not res:
         return {"error": "not found"}
     return {"event_id": event_id, "detail": res[0]}

@@ -95,7 +95,7 @@ class DatabaseManager:
         try:
             # Check if tables already exist to avoid resetting the database
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files_baseline'")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='baselines'")
             if cursor.fetchone() is None:
                 conn.executescript(schema_sql)
                 conn.commit()
