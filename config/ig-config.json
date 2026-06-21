@@ -1,6 +1,5 @@
 {
   "version": "2.0",
-  "hmac_signature": "8200f784ae498f3441172801820841119156249d4146ef664d19b8cb80d301f7",
   "monitored_paths": [
     {
       "path": "C:\\Windows\\System32",
@@ -91,8 +90,9 @@
       "standard_file_renamed"
     ]
   },
-  "vault_path": "C:\\ProgramData\\IntegrityGuardian\\vault",
-  "db_path": "C:\\ProgramData\\IntegrityGuardian\\integrity.db",
+  "vault_path": "C:\\Users\\Alinaswe simfukwe\\Desktop\\integrity_guardian\\vault",
+  "db_path": "integrity.db",
   "log_retention_days": 365,
-  "dashboard_port": 7890
+  "dashboard_port": 7890,
+  "hmac_signature": "a381b153a9e51a02c14586a7802f622cf4a63fd8ed70990ae6c58dee910531a2"
 }
