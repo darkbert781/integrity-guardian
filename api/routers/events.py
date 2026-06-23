@@ -73,3 +73,43 @@ def get_event(event_id: int, db = Depends(get_db)):
     if not res:
         return {"error": "not found"}
     return {"event_id": event_id, "detail": res[0]}
+
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+
+@router.post("/analyze")
+def analyze_events(db = Depends(get_db)):
+    res = db.query("SELECT file_path, severity, ai_anomaly_score FROM events ORDER BY timestamp DESC LIMIT 500")
+    if len(res) < 5:
+        return {"summary": "0 threats (insufficient data)", "clusters": []}
+    
+    df = pd.DataFrame(res, columns=["file_path", "severity", "score"])
+    severity_map = {"CRITICAL": 90, "WARNING": 60, "INFO": 20}
+    df['risk'] = df['severity'].map(severity_map).fillna(10)
+    
+    def get_category(path):
+        p = str(path).lower()
+        if 'system32' in p or 'windows' in p: return 'System Core'
+        if 'users' in p: return 'User Data'
+        if 'driver' in p or '.sys' in p: return 'Drivers'
+        return 'Other'
+        
+    df['category'] = df['file_path'].apply(get_category)
+    
+    clf = IsolationForest(contamination=0.1, random_state=42)
+    df['anomaly'] = clf.fit_predict(df[['risk']])
+    
+    anomalies = df[df['anomaly'] == -1]
+    
+    clusters = []
+    for cat, group in df.groupby('category'):
+        clusters.append({
+            "name": cat,
+            "risk": round(group['risk'].mean(), 2),
+            "files": len(group)
+        })
+        
+    return {
+        "summary": f"{len(anomalies)} threats detected.",
+        "clusters": clusters
+    }

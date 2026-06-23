@@ -8,13 +8,18 @@ def get_db(request: Request):
 
 @router.get("/monitored")
 def get_monitored_files(db = Depends(get_db)):
-    res = db.query("SELECT file_path, tier, is_locked FROM baselines")
+    try:
+        res = db.query("SELECT * FROM baselines")
+    except Exception:
+        return []
+    
     files = []
     for row in res:
+        r_dict = dict(row)
         files.append({
-            "file_path": row[0],
-            "tier": row[1],
-            "is_locked": bool(row[2])
+            "file_path": r_dict.get("file_path", ""),
+            "tier": r_dict.get("tier", "standard"),
+            "is_locked": bool(r_dict.get("is_locked", 0))
         })
     return files
 
@@ -30,3 +35,8 @@ def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
 def unregister_file(file_path: str, db = Depends(get_db)):
     db.execute("DELETE FROM baselines WHERE file_path = ?", (file_path,))
     return {"status": "unregistered", "file_path": file_path}
+
+@router.delete("/unregister/all")
+def unregister_all_files(db = Depends(get_db)):
+    db.execute("DELETE FROM baselines")
+    return {"status": "all_unregistered"}

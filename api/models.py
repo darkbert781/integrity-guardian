@@ -4,8 +4,7 @@ from typing import Optional, List, Dict, Any
 class LoginRequest(BaseModel):
     username: str
     password: str
-    totp_code: str
-    
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

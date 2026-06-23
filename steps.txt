@@ -1,0 +1,63 @@
+Integrity Guardian - Step-by-Step Execution Guide
+
+This guide explains how to run each component of the Integrity Guardian system on your local machine.
+
+### Prerequisites
+Make sure you have Python (3.8+) and Node.js installed.
+(Note: The project uses local `venv_packages` for some scripts, but it's best to have dependencies installed globally or in a virtual environment).
+
+1. Install Python dependencies:
+   > pip install -r requirements.txt
+
+---
+
+### Step 1: Run the Core Monitoring Service
+The core engine monitors the file system and registry. You can run it standalone (foreground) instead of as a Windows service for development/testing.
+
+Command:
+   > python service/run_standalone.py
+
+What it does: 
+Initializes the database, loads configurations, rebuilds the baseline, and starts the ETW, Registry, and Driver monitoring threads.
+
+---
+
+### Step 2: Run the API Backend
+The FastAPI backend serves data to the CLI and Dashboard.
+
+Command (in a new terminal):
+   > python run_api.py
+
+What it does: 
+Starts the Uvicorn server on http://localhost:7890. It exposes REST endpoints for alerts, events, baseline management, and settings.
+
+---
+
+### Step 3: Run the Dashboard (Frontend)
+The web dashboard provides a UI for the system.
+
+Commands (in a new terminal):
+   > cd dashboard
+   > npm install
+   > npm run dev
+
+What it does: 
+Starts the Vite development server (usually on http://localhost:5173). It connects to the API backend to visualize system integrity status.
+
+---
+
+### Step 4: Use the Command Line Interface (CLI)
+You can use the CLI tool to control the system and register paths for monitoring.
+
+Commands (in a new terminal, from the project root):
+- Check system status:
+   > python cli/ig.py status
+
+- Register a new directory to monitor:
+   > python cli/ig.py register "C:\Path\To\Monitor"
+
+- Remove a directory from monitoring:
+   > python cli/ig.py unregister "C:\Path\To\Monitor"
+
+- List active alerts:
+   > python cli/ig.py alerts --open

@@ -16,17 +16,20 @@ function Section({ title, children, className }) {
 
 export function AIInsights() {
   const [insight, setInsight] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.post('/events/analyze').then(r => setInsight(r.data)).catch(() => {});
+    api.post('/events/analyze')
+      .then(r => {
+        setInsight(r.data);
+        setError(null);
+      })
+      .catch(e => {
+        setError(e.response?.data?.detail || e.message);
+      });
   }, []);
 
-  const data = insight ? [
-    { name: 'System Core', risk: 85, files: 12 },
-    { name: 'User Data', risk: 20, files: 45 },
-    { name: 'Drivers', risk: 65, files: 8 },
-    { name: 'Network', risk: 40, files: 22 },
-  ] : [];
+  const data = insight?.clusters || [];
 
   const TP = { contentStyle: { background: '#ffffff', border: '1px solid #e2e8f0', fontSize: 12, borderRadius: 4, color: '#0f172a' } };
 
@@ -59,7 +62,9 @@ export function AIInsights() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[350px]">
         <Section title="Threat Vector Clustering">
-          {data.length === 0 ? (
+          {error ? (
+             <div className="flex items-center justify-center h-full text-sm text-red-500 font-medium">Error: {error}</div>
+          ) : data.length === 0 ? (
              <div className="flex items-center justify-center h-full text-sm text-textMuted">Gathering model telemetry...</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">

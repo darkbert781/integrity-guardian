@@ -26,6 +26,9 @@ class AlertManager:
         import resend
         
         api_key = os.environ.get("RESEND_API_KEY", "re_W9XB582X_PNCvW4iL3RucnDVuuzqDM1jc")
+        from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+        to_email = os.environ.get("RESEND_TO_EMAIL", "sibelekijamin@gmail.com")
+        
         resend.api_key = api_key
         
         severity = incident.get('severity', 'INFO')
@@ -42,8 +45,8 @@ class AlertManager:
         
         try:
             r = resend.Emails.send({
-                "from": "onboarding@resend.dev",
-                "to": "sibelekijamin@gmail.com",
+                "from": from_email,
+                "to": to_email,
                 "subject": f"[IntegrityGuardian] {severity} Alert: {file_path}",
                 "html": html_content
             })

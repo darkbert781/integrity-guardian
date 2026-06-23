@@ -4,7 +4,10 @@ __pycache__/
 *.pyo
 *.db
 vault/
+venv_packages/
 .env
+__pycache__/
+*.pyc
 .pytest_cache/
 *.log
 HACK_TEST*

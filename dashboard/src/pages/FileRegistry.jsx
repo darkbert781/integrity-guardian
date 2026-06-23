@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import api from '../lib/api';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { DirectoryPicker } from '../components/DirectoryPicker';
-import { FileBox, Plus, Search, Lock, Unlock, RefreshCw, FolderOpen, X } from 'lucide-react';
+import { FileBox, Plus, Search, Lock, Unlock, RefreshCw, FolderOpen, X, Trash2 } from 'lucide-react';
 
 function truncatePath(p) {
   if (!p || p.length < 50) return p;
@@ -87,6 +87,26 @@ export function FileRegistry() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL registered paths?")) return;
+    try {
+      await api.delete('/files/unregister/all');
+      fetchFiles();
+    } catch (err) {
+      alert("Failed to delete all paths.");
+    }
+  };
+
+  const handleDelete = async (path) => {
+    if (!window.confirm(`Stop monitoring ALL registered paths?`)) return;
+    try {
+      await api.delete('/files/unregister/all');
+      fetchFiles();
+    } catch (err) {
+      alert("Failed to delete paths.");
+    }
+  };
+
   const filtered = files.filter(f =>
     !search || f.file_path?.toLowerCase().includes(search.toLowerCase())
   );
@@ -104,13 +124,22 @@ export function FileRegistry() {
           <h2 className="text-2xl font-bold text-textMain tracking-tight">File Registry</h2>
           <p className="text-sm text-textMuted mt-1">Baseline monitoring configuration</p>
         </div>
-        <button
-          onClick={fetchFiles}
-          className="flex items-center gap-2 bg-white border border-border px-4 py-2 rounded text-sm font-medium text-textMain hover:bg-[#f8f9fa] transition-colors shadow-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleDeleteAll}
+            className="flex items-center gap-2 bg-[#fef2f2] border border-[#f87171] px-4 py-2 rounded text-sm font-medium text-[#991b1b] hover:bg-[#fee2e2] transition-colors shadow-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete All
+          </button>
+          <button
+            onClick={fetchFiles}
+            className="flex items-center gap-2 bg-white border border-border px-4 py-2 rounded text-sm font-medium text-textMain hover:bg-[#f8f9fa] transition-colors shadow-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Registration Panel */}
@@ -206,12 +235,13 @@ export function FileRegistry() {
                 <th>File Path</th>
                 <th>Tier</th>
                 <th>Lock Status</th>
+                <th className="w-16">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-12 text-textMuted text-sm">
+                  <td colSpan="5" className="text-center py-12 text-textMuted text-sm">
                     {search ? 'No paths match your search.' : 'No monitored files found. Register a path above.'}
                   </td>
                 </tr>
@@ -239,6 +269,15 @@ export function FileRegistry() {
                           <Unlock className="w-3.5 h-3.5" /> Monitored
                         </span>
                       )}
+                    </td>
+                    <td className="text-center">
+                      <button 
+                        onClick={() => handleDelete(f.file_path)}
+                        className="p-1.5 text-textMuted hover:text-critical rounded hover:bg-[#fef2f2] transition-colors"
+                        title="Delete path"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))

@@ -5,6 +5,11 @@ import logging
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Inject local packages directory
+VENV = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv_packages")
+if VENV not in sys.path:
+    sys.path.insert(0, VENV)
+
 from db.db_manager import DatabaseManager
 from config_manager import ConfigManager
 from baseline_manager import BaselineManager
