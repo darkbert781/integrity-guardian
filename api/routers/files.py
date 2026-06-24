@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, Request
 from typing import List
 
@@ -34,6 +35,10 @@ def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
 @router.delete("/unregister")
 def unregister_file(file_path: str, db = Depends(get_db)):
     db.execute("DELETE FROM baselines WHERE file_path = ?", (file_path,))
+    # Delete any files that are within that directory
+    # SQLite uses LIKE with % wildcard
+    like_path = file_path + os.sep + '%'
+    db.execute("DELETE FROM baselines WHERE file_path LIKE ?", (like_path,))
     return {"status": "unregistered", "file_path": file_path}
 
 @router.delete("/unregister/all")

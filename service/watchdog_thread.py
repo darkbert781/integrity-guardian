@@ -62,30 +62,53 @@ class WatchdogThread(threading.Thread):
         logger.info("Watchdog thread started.")
         
         event_handler = IGEventHandler(self.baseline_manager)
-        
-        # Pull paths from db instead of config to support dynamic registration
-        try:
-            # We need to query baselines table for unique directories
-            rows = self.baseline_manager.db.query("SELECT file_path FROM baselines")
-            dirs_to_watch = set()
-            for row in rows:
-                path = row['file_path']
-                if os.path.isdir(path):
-                    dirs_to_watch.add(path)
-                else:
-                    dirs_to_watch.add(os.path.dirname(path))
-            
-            for d in dirs_to_watch:
-                if os.path.exists(d):
-                    self.observer.schedule(event_handler, d, recursive=True)
-                    logger.info(f"Watchdog monitoring attached to: {d}")
-        except Exception as e:
-            logger.error(f"Error attaching watchdog paths: {e}")
-            
         self.observer.start()
         
+        watched_dirs = set()
+        watches = {} # path to watch object
+
         while self.running:
-            time.sleep(1)
+            try:
+                # Query baselines table for current unique directories
+                rows = self.baseline_manager.db.query("SELECT file_path, current_hash, tier FROM baselines")
+                current_dirs = set()
+                for row in rows:
+                    path = row['file_path']
+                    is_dir = os.path.isdir(path)
+                    
+                    if is_dir:
+                        current_dirs.add(path)
+                    elif os.path.exists(os.path.dirname(path)):
+                        current_dirs.add(os.path.dirname(path))
+                        
+                    # Automatically build baseline for newly registered paths
+                    if row.get('current_hash') == 'PENDING':
+                        self.baseline_manager.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
+                        if is_dir:
+                            threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row.get('tier', 'standard')), daemon=True).start()
+                        elif os.path.exists(path):
+                            threading.Thread(target=self.baseline_manager._add_or_update_file, args=(path, row.get('tier', 'standard')), daemon=True).start()
+                
+                # new dirs to watch
+                for d in current_dirs - watched_dirs:
+                    if os.path.exists(d):
+                        watch = self.observer.schedule(event_handler, d, recursive=True)
+                        watches[d] = watch
+                        logger.info(f"Watchdog monitoring attached to: {d}")
+                
+                # removed dirs to unwatch
+                for d in watched_dirs - current_dirs:
+                    if d in watches:
+                        self.observer.unschedule(watches[d])
+                        del watches[d]
+                        logger.info(f"Watchdog monitoring removed from: {d}")
+
+                watched_dirs = current_dirs
+
+            except Exception as e:
+                logger.error(f"Error updating watchdog paths: {e}")
+
+            time.sleep(5)
             
         self.observer.stop()
         self.observer.join()
