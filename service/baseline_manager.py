@@ -42,14 +42,14 @@ class BaselineManager:
 
     def _process_directory(self, dir_path: str, recursive: bool, tier: str):
         if recursive:
-            for root, _, files in os.walk(dir_path):
+            for root, dirs, files in os.walk(dir_path):
+                self._add_or_update_file(root, tier)
                 for file in files:
                     self._add_or_update_file(os.path.join(root, file), tier)
         else:
             for item in os.listdir(dir_path):
                 full_path = os.path.join(dir_path, item)
-                if os.path.isfile(full_path):
-                    self._add_or_update_file(full_path, tier)
+                self._add_or_update_file(full_path, tier)
 
     def _add_or_update_file(self, file_path: str, tier: str):
         sha256, blake3 = HashEngine.hash_file(file_path)

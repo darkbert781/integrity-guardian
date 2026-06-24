@@ -83,6 +83,9 @@ class HashEngine:
     @classmethod
     def hash_file(cls, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """Returns (sha256, blake3). Blake3 is only computed for files > 10MB."""
+        if os.path.isdir(file_path):
+            return "DIRECTORY", None
+            
         try:
             size = os.path.getsize(file_path)
         except OSError:

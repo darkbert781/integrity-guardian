@@ -12,40 +12,36 @@ class IGEventHandler(FileSystemEventHandler):
         self.baseline_manager = baseline_manager
 
     def on_created(self, event):
-        if not event.is_directory:
-            self.baseline_manager.handle_event({
-                'operation': 'CREATED',
-                'file_path': event.src_path,
-                'process_name': 'Unknown',
-                'source': 'watchdog'
-            })
+        self.baseline_manager.handle_event({
+            'operation': 'CREATED',
+            'file_path': event.src_path,
+            'process_name': 'Unknown',
+            'source': 'watchdog'
+        })
 
     def on_modified(self, event):
-        if not event.is_directory:
-            self.baseline_manager.handle_event({
-                'operation': 'MODIFIED',
-                'file_path': event.src_path,
-                'process_name': 'Unknown',
-                'source': 'watchdog'
-            })
+        self.baseline_manager.handle_event({
+            'operation': 'MODIFIED',
+            'file_path': event.src_path,
+            'process_name': 'Unknown',
+            'source': 'watchdog'
+        })
 
     def on_deleted(self, event):
-        if not event.is_directory:
-            self.baseline_manager.handle_event({
-                'operation': 'DELETED',
-                'file_path': event.src_path,
-                'process_name': 'Unknown',
-                'source': 'watchdog'
-            })
+        self.baseline_manager.handle_event({
+            'operation': 'DELETED',
+            'file_path': event.src_path,
+            'process_name': 'Unknown',
+            'source': 'watchdog'
+        })
 
     def on_moved(self, event):
-        if not event.is_directory:
-            self.baseline_manager.handle_event({
-                'operation': 'RENAMED',
-                'file_path': event.dest_path,
-                'process_name': 'Unknown',
-                'source': 'watchdog'
-            })
+        self.baseline_manager.handle_event({
+            'operation': 'RENAMED',
+            'file_path': event.dest_path,
+            'process_name': 'Unknown',
+            'source': 'watchdog'
+        })
 
 
 class WatchdogThread(threading.Thread):
@@ -82,12 +78,12 @@ class WatchdogThread(threading.Thread):
                         current_dirs.add(os.path.dirname(path))
                         
                     # Automatically build baseline for newly registered paths
-                    if row.get('current_hash') == 'PENDING':
+                    if row['current_hash'] == 'PENDING':
                         self.baseline_manager.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
                         if is_dir:
-                            threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row.get('tier', 'standard')), daemon=True).start()
+                            threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row['tier']), daemon=True).start()
                         elif os.path.exists(path):
-                            threading.Thread(target=self.baseline_manager._add_or_update_file, args=(path, row.get('tier', 'standard')), daemon=True).start()
+                            threading.Thread(target=self.baseline_manager._add_or_update_file, args=(path, row['tier']), daemon=True).start()
                 
                 # new dirs to watch
                 for d in current_dirs - watched_dirs:
