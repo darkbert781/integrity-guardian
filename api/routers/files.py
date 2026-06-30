@@ -26,6 +26,7 @@ def get_monitored_files(db = Depends(get_db)):
 
 @router.post("/register")
 def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
+    file_path = os.path.abspath(file_path)
     db.execute(
         "INSERT OR IGNORE INTO baselines (file_path, current_hash, tier) VALUES (?, 'PENDING', ?)",
         (file_path, tier)
@@ -34,14 +35,28 @@ def register_file(file_path: str, tier: str = "standard", db = Depends(get_db)):
 
 @router.delete("/unregister")
 def unregister_file(file_path: str, db = Depends(get_db)):
-    db.execute("DELETE FROM baselines WHERE file_path = ?", (file_path,))
-    # Delete any files that are within that directory
-    # SQLite uses LIKE with % wildcard
+    file_path = os.path.abspath(file_path)
     like_path = file_path + os.sep + '%'
+    
+    # Delete associated history
+    db.execute("DELETE FROM hash_history WHERE file_id IN (SELECT id FROM baselines WHERE file_path = ? OR file_path LIKE ?)", (file_path, like_path))
+    
+    # Delete associated alerts
+    db.execute("DELETE FROM alerts WHERE event_id IN (SELECT id FROM events WHERE file_path = ? OR file_path LIKE ?)", (file_path, like_path))
+    
+    # Delete associated events
+    db.execute("DELETE FROM events WHERE file_path = ? OR file_path LIKE ?", (file_path, like_path))
+    
+    # Delete from baselines
+    db.execute("DELETE FROM baselines WHERE file_path = ?", (file_path,))
     db.execute("DELETE FROM baselines WHERE file_path LIKE ?", (like_path,))
+    
     return {"status": "unregistered", "file_path": file_path}
 
 @router.delete("/unregister/all")
 def unregister_all_files(db = Depends(get_db)):
+    db.execute("DELETE FROM alerts")
+    db.execute("DELETE FROM events")
+    db.execute("DELETE FROM hash_history")
     db.execute("DELETE FROM baselines")
     return {"status": "all_unregistered"}
