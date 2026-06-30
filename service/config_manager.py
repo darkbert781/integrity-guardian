@@ -70,6 +70,21 @@ class ConfigManager:
         self.config_data = data
         return data
 
+    def save_config(self):
+        """Calculates the new HMAC signature and saves the configuration back to disk."""
+        if 'hmac_signature' in self.config_data:
+            del self.config_data['hmac_signature']
+        
+        # Calculate new HMAC
+        content_str = json.dumps(self.config_data, separators=(',', ':'), sort_keys=True)
+        new_hmac = hmac.new(self._machine_guid.encode(), content_str.encode(), hashlib.sha256).hexdigest()
+        
+        self.config_data['hmac_signature'] = new_hmac
+        
+        # Save back to file with nice formatting
+        with open(self.config_path, 'w', encoding='utf-8') as f:
+            json.dump(self.config_data, f, indent=2)
+
     def reload_config(self) -> Dict[str, Any]:
         logger.info("Reloading configuration...")
         return self.load_config()
