@@ -98,12 +98,12 @@ export function FileRegistry() {
   };
 
   const handleDelete = async (path) => {
-    if (!window.confirm(`Stop monitoring ALL registered paths?`)) return;
+    if (!window.confirm(`Stop monitoring ${path}?`)) return;
     try {
-      await api.delete('/files/unregister/all');
+      await api.delete(`/files/unregister?file_path=${encodeURIComponent(path)}`);
       fetchFiles();
     } catch (err) {
-      alert("Failed to delete paths.");
+      alert("Failed to delete path.");
     }
   };
 
