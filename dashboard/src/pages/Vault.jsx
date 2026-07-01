@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { Lock, History, DownloadCloud, FileText, AlertTriangle, Settings as SettingsIcon } from 'lucide-react';
+import { DirectoryPicker } from '../components/DirectoryPicker';
 
 export function Vault() {
   const [vaultFiles, setVaultFiles] = useState([]);
@@ -8,6 +9,7 @@ export function Vault() {
   const [restoringId, setRestoringId] = useState(null);
   const [search, setSearch] = useState('');
   const [vaultPath, setVaultPath] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const fetchVault = () => {
     setLoading(true);
@@ -59,11 +61,9 @@ export function Vault() {
     !search || f.original_path?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleConfigurePath = async () => {
-    const newPath = window.prompt("Enter new absolute path for Vault storage:", vaultPath);
-    if (newPath !== null && newPath.trim() !== "") {
+  const handlePickerSelect = async (newPath) => {
+    if (newPath) {
       try {
-        // Fetch current settings first to merge
         const r = await api.get('/settings/');
         const currentConfig = r.data.config || {};
         const updatedConfig = { ...currentConfig, vault_dir: newPath.trim() };
@@ -77,6 +77,11 @@ export function Vault() {
 
   return (
     <div className="flex flex-col h-full gap-8 animate-fade-in-up">
+      <DirectoryPicker
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handlePickerSelect}
+      />
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -121,7 +126,7 @@ export function Vault() {
             </div>
           </div>
           <button 
-            onClick={handleConfigurePath}
+            onClick={() => setPickerOpen(true)}
             className="bg-surface border border-borderHighlight hover:bg-surfaceHighlight hover:border-secondary/50 text-textMain text-sm font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 shadow-sm flex items-center gap-2 group whitespace-nowrap">
              Configure Path
           </button>
