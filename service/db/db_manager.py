@@ -49,13 +49,17 @@ class DatabaseManager:
             return self._conn
             
         try:
-            self._conn = sqlcipher.connect(self.db_path, check_same_thread=False)
+            self._conn = sqlcipher.connect(self.db_path, check_same_thread=False, timeout=30.0)
             self._conn.row_factory = sqlite3.Row
             
             if self.use_encryption:
                 key = self._get_encryption_key()
                 # Pragma key sets the encryption key for sqlcipher
                 self._conn.execute(f"PRAGMA key='{key}'")
+                
+            # Enable WAL mode for high concurrency
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA synchronous=NORMAL")
                 
             return self._conn
         except Exception as e:

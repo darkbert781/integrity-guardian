@@ -2,8 +2,28 @@
   "version": "2.0",
   "monitored_paths": [
     {
-      "path": "C:\\Users\\Alinaswe\\Desktop\\ig_test_folder",
+      "path": "C:\\Windows\\System32",
       "tier": "critical",
+      "recursive": false
+    },
+    {
+      "path": "C:\\Windows\\System32\\drivers",
+      "tier": "critical",
+      "recursive": false
+    },
+    {
+      "path": "C:\\Windows\\SysWOW64",
+      "tier": "critical",
+      "recursive": false
+    },
+    {
+      "path": "C:\\Program Files",
+      "tier": "standard",
+      "recursive": true
+    },
+    {
+      "path": "C:\\ProgramData",
+      "tier": "standard",
       "recursive": true
     }
   ],

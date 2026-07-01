@@ -56,7 +56,9 @@ Now that all three components are running, you can test the real-time event pipe
 5. Delete the file:
    > del C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
 
-**Check your inbox!** 
+**Check your inbox and dashboard!** 
 You should instantly receive professional HTML email alerts for the folder creation, the file creation, the modification, and the deletion. You can also view these events flowing into your Dashboard in real-time.
 
-*Note: The global configuration is currently set to only monitor this test folder so you don't experience SQLite database locking delays during testing. Once you are satisfied, you can use the CLI or edit config/ig-config.json to monitor C:\Windows\System32 or any other path.*
+*Dynamic Registration: You can monitor ANY new folder instantly while the system is running! Simply use the CLI to register it:*
+   > python cli/ig.py register "C:\Path\To\Your\New\Folder"
+*The Core Service will instantly pick it up and begin monitoring it in real-time without requiring a restart.*

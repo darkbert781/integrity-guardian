@@ -88,9 +88,12 @@ class WatchdogThread(threading.Thread):
                 # new dirs to watch
                 for d in current_dirs - watched_dirs:
                     if os.path.exists(d):
-                        watch = self.observer.schedule(event_handler, d, recursive=True)
-                        watches[d] = watch
-                        logger.info(f"Watchdog monitoring attached to: {d}")
+                        try:
+                            watch = self.observer.schedule(event_handler, d, recursive=True)
+                            watches[d] = watch
+                            logger.info(f"Watchdog monitoring attached to: {d}")
+                        except Exception as ex:
+                            logger.warning(f"Failed to attach watchdog to {d} (skipping): {ex}")
                 
                 # removed dirs to unwatch
                 for d in watched_dirs - current_dirs:

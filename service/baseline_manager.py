@@ -51,8 +51,13 @@ class BaselineManager:
             for item in os.listdir(dir_path):
                 full_path = os.path.join(dir_path, item)
                 self._add_or_update_file(full_path, tier)
+    def _is_internal_file(self, file_path: str) -> bool:
+        base = os.path.basename(file_path)
+        return base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm', 'ig_service.log', 'log.txt')
 
     def _add_or_update_file(self, file_path: str, tier: str):
+        if self._is_internal_file(file_path):
+            return
         is_dir = os.path.isdir(file_path)
         sha256 = "dir"
         if not is_dir:
@@ -95,6 +100,10 @@ class BaselineManager:
         Called when the driver/ETW detects a file change.
         """
         file_path = event['file_path']
+        
+        if self._is_internal_file(file_path):
+            return
+            
         operation = event['operation']
         process_name = event.get('process_name', 'Unknown')
         
@@ -142,13 +151,20 @@ class BaselineManager:
             severity = "WARNING"
             
         try:
-            self.db.execute(
+            cursor = self.db.execute(
                 """INSERT INTO events 
                    (timestamp, file_path, event_type, severity, process_id, process_name, hash_old, hash_new)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (now, event['file_path'], event['operation'], severity,
                  event.get('process_id'), event.get('process_name'), old_hash, new_hash)
             )
+            event_id = cursor.lastrowid
+            
+            if severity in ['WARNING', 'CRITICAL']:
+                self.db.execute(
+                    "INSERT INTO alerts (event_id, severity, created_at, status, alert_type, message) VALUES (?, ?, ?, ?, ?, ?)",
+                    (event_id, severity, now, 'NEW', 'SYSTEM', f"File {event['operation']} detected: {event['file_path']}")
+                )
             
             if old_hash != new_hash and event['operation'] != 'DELETED':
                 self.db.execute(
