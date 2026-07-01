@@ -53,7 +53,15 @@ class BaselineManager:
                 self._add_or_update_file(full_path, tier)
     def _is_internal_file(self, file_path: str) -> bool:
         base = os.path.basename(file_path)
-        return base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm', 'ig_service.log', 'log.txt')
+        if base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm', 'ig_service.log', 'log.txt'):
+            return True
+        
+        # Ignore noisy developer/system directories
+        parts = file_path.split(os.sep)
+        if any(ignored in parts for ignored in ('.git', 'node_modules', '.venv', '__pycache__', 'venv_packages', '.pytest_cache')):
+            return True
+            
+        return False
 
     def _add_or_update_file(self, file_path: str, tier: str):
         if self._is_internal_file(file_path):
