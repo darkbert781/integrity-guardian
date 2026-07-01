@@ -11,3 +11,6 @@ __pycache__/
 .pytest_cache/
 *.log
 HACK_TEST*
+
+integrity.db-shm
+integrity.db-wal
