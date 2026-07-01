@@ -52,7 +52,7 @@ export function AIInsights() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-textMain tracking-tight">AI Insights</h2>
-          <p className="text-sm text-textMuted mt-2">Isolation Forest anomaly detection & threat clustering telemetry.</p>
+          <p className="text-sm text-textMuted mt-2">AI-powered anomaly detection and threat grouping.</p>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export function AIInsights() {
           {error ? (
              <div className="flex items-center justify-center h-full text-sm text-critical font-medium bg-critical/10 rounded-lg border border-critical/20 p-4">{error}</div>
           ) : data.length === 0 ? (
-             <div className="flex items-center justify-center h-full text-sm text-textMuted font-mono">Gathering model telemetry...</div>
+             <div className="flex items-center justify-center h-full text-sm text-textMuted font-mono">Loading data...</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: -20 }}>

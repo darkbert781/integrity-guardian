@@ -31,7 +31,7 @@ function Bubble({ msg }) {
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-              Matched Telemetry
+              Matched Events
             </p>
             {msg.results.map((r, i) => (
               <div key={i} className="bg-background border border-borderHighlight rounded-lg p-3 text-textMain hover:border-primary/30 transition-colors shadow-sm">
@@ -61,7 +61,7 @@ export function NLQuery() {
     {
       role: 'assistant',
       ai_response:
-        'Secure connection established. I am the Integrity Guardian forensic AI powered by Google Gemini. Query the telemetry database for file integrity anomalies, process heuristics, or active threats. Falling back to keyword clustering if LLM link is offline.',
+        'I am the Integrity Guardian AI assistant. Ask me about file changes, alerts, or active threats.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -87,7 +87,7 @@ export function NLQuery() {
           ai_response:
             res.data.ai_response ||
             (res.data.results?.length
-              ? `Identified ${res.data.results.length} related telemetry events.`
+              ? `Identified ${res.data.results.length} related events.`
               : 'Zero anomalous events detected for query.'),
           results: res.data.results || [],
         },
@@ -110,7 +110,7 @@ export function NLQuery() {
       <div>
         <h2 className="text-3xl font-bold text-textMain tracking-tight">Forensic Interface</h2>
         <p className="text-sm text-textMuted mt-2">
-          Gemini-powered natural language query engine for live telemetry.
+          AI-powered assistant to query system events.
         </p>
       </div>
 
@@ -154,7 +154,7 @@ export function NLQuery() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder="Input forensic query parameter... (Enter to transmit)"
+          placeholder="Ask a question... (Press Enter to search)"
           disabled={loading}
         />
         <button

@@ -144,7 +144,7 @@ export function Overview() {
         <Section title="Severity Distribution">
           {pieData.every(d => d.value === 0) ? (
             <div className="flex h-full items-center justify-center">
-              <p className="text-textMuted text-sm font-mono">No telemetry data</p>
+              <p className="text-textMuted text-sm font-mono">No data available</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>

@@ -108,7 +108,7 @@ export function Vault() {
               <SettingsIcon className="w-6 h-6 text-secondary" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-textMain tracking-wider uppercase">Vault Storage Configuration</h3>
+              <h3 className="text-sm font-bold text-textMain tracking-wider uppercase">Vault Storage Settings</h3>
               <p className="text-xs text-textMuted mt-1">Specify the physical disk location where encrypted snapshots are saved.</p>
               
               <div className="mt-5 flex items-center gap-3">
@@ -154,7 +154,7 @@ export function Vault() {
                 <Lock className="w-12 h-12 text-borderHighlight relative z-10" />
                 <div className="absolute inset-0 bg-borderHighlight/20 blur-xl"></div>
               </div>
-              <h3 className="text-xl font-bold text-textMain">Vault is pristine</h3>
+              <h3 className="text-xl font-bold text-textMain">Vault is empty</h3>
               <p className="text-sm text-textMuted mt-3 max-w-md">No encrypted snapshots exist in the vault. The system will automatically secure critical files upon detection of tampering.</p>
             </div>
           ) : (

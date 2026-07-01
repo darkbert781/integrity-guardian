@@ -90,7 +90,7 @@ export function Compliance() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-textMain tracking-tight">Compliance Status</h2>
-          <p className="text-sm text-textMuted mt-2">Real-time regulatory framework mapping based on system integrity telemetry.</p>
+          <p className="text-sm text-textMuted mt-2">Real-time regulatory framework mapping based on system events.</p>
         </div>
       </div>
 

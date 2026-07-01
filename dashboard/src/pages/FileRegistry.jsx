@@ -122,7 +122,7 @@ export function FileRegistry() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-textMain tracking-tight">File Registry</h2>
-          <p className="text-sm text-textMuted mt-2">Kernel-level baseline monitoring asset configuration.</p>
+          <p className="text-sm text-textMuted mt-2">Manage the files and folders you want to monitor.</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -225,7 +225,7 @@ export function FileRegistry() {
             <Search className="w-4 h-4 text-primary" />
             <input
               className="bg-transparent border-none outline-none text-sm w-full text-textMain placeholder-textMuted font-mono"
-              placeholder="Search active telemetry paths..."
+              placeholder="Search monitored files..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -252,7 +252,7 @@ export function FileRegistry() {
                   <td colSpan="5" className="text-center py-24 text-textMuted">
                     <div className="flex flex-col items-center gap-4 opacity-50">
                       <FileBox className="w-12 h-12" />
-                      <p className="text-lg font-bold text-textMain">{search ? 'No assets match query.' : 'No telemetry assets found.'}</p>
+                      <p className="text-lg font-bold text-textMain">{search ? 'No files match your search.' : 'No files found.'}</p>
                       <p className="text-sm">Register a path above to begin monitoring.</p>
                     </div>
                   </td>
@@ -288,7 +288,7 @@ export function FileRegistry() {
                       <button 
                         onClick={() => handleDelete(f.file_path)}
                         className="p-2 text-textMuted hover:text-critical rounded hover:bg-critical/20 transition-all border border-transparent hover:border-critical/30"
-                        title="Remove telemetry asset"
+                        title="Stop monitoring file"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

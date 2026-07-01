@@ -63,8 +63,8 @@ export function Settings() {
     <div className="flex flex-col h-full gap-8 max-w-6xl mx-auto w-full animate-fade-in-up">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-textMain tracking-tight">System Configuration</h2>
-          <p className="text-sm text-textMuted mt-2">Manage Integrity Guardian global operating parameters.</p>
+          <h2 className="text-3xl font-bold text-textMain tracking-tight">System Settings</h2>
+          <p className="text-sm text-textMuted mt-2">Manage Integrity Guardian global settings.</p>
         </div>
         <div className="flex items-center gap-4">
           {saved && (
@@ -86,7 +86,7 @@ export function Settings() {
       {loading ? (
         <div className="flex items-center justify-center p-20 flex-col gap-4">
           <SettingsIcon className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-sm font-mono text-textMuted">Loading configuration matrix...</p>
+          <p className="text-sm font-mono text-textMuted">Loading configuration...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
@@ -124,7 +124,7 @@ export function Settings() {
                 </p>
                 <ol className="text-xs text-textMuted list-decimal list-inside space-y-2 font-mono">
                   <li>Generate token at <span className="text-primary font-bold">aistudio.google.com</span></li>
-                  <li>Initialize new kernel terminal</li>
+                  <li>Open a new terminal</li>
                   <li>Execute: <span className="bg-background px-2 py-1 rounded border border-borderHighlight text-textMain">set GEMINI_API_KEY=&lt;token&gt;</span></li>
                   <li>Restart service: <span className="bg-background px-2 py-1 rounded border border-borderHighlight text-textMain">python run_api.py</span></li>
                 </ol>
@@ -173,7 +173,7 @@ export function Settings() {
                   className="flex items-center gap-2 bg-surface border border-borderHighlight hover:bg-surfaceHighlight hover:border-primary/30 text-textMain text-xs font-bold px-4 py-2.5 rounded-lg transition-all uppercase tracking-widest disabled:opacity-50 shadow-sm"
                 >
                   <Send className={`w-4 h-4 ${testingEmail ? 'text-primary animate-pulse' : 'text-textMuted'}`} />
-                  {testingEmail ? 'TRANSMITTING...' : 'TEST CONNECTION'}
+                  {testingEmail ? 'SENDING...' : 'TEST CONNECTION'}
                 </button>
                 {emailTestResult && (
                   <span className={`text-[10px] font-bold uppercase tracking-widest ${emailTestResult.success ? 'text-success' : 'text-critical'}`}>
@@ -183,7 +183,7 @@ export function Settings() {
               </div>
             </Section>
 
-            <Section title="System Telemetry">
+            <Section title="System Information">
               <div className="flex flex-col gap-4">
                 <div className="flex justify-between border-b border-borderHighlight pb-3">
                   <span className="text-xs font-bold text-textMuted uppercase tracking-widest">API Version</span>
