@@ -3,8 +3,8 @@ import api from '../lib/api';
 import { Shield } from 'lucide-react';
 
 export function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
