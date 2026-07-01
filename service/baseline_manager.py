@@ -21,17 +21,22 @@ class BaselineManager:
         return self.config.get("monitored_paths", [])
 
     def _is_path_covered(self, file_path: str) -> bool:
-        paths_config = self._get_monitored_paths()
-        for p_info in paths_config:
-            reg_path = p_info.get("path")
-            recursive = p_info.get("recursive", False)
-            if file_path == reg_path:
-                return True
-            if recursive and file_path.startswith(reg_path + os.sep):
-                return True
-            if not recursive and os.path.dirname(file_path) == reg_path:
+        """Check if file_path falls under a user-registered path.
+        Reads from the baselines DB table (shared with the API process)
+        rather than the potentially stale in-memory config.
+        """
+        # Fetch all directory entries in baselines — these are the registered roots
+        registered_dirs = self.db.query(
+            "SELECT file_path FROM baselines WHERE current_hash IN ('dir', 'MONITORED', 'PENDING')"
+        )
+        for row in registered_dirs:
+            reg = row['file_path']
+            if not os.path.isdir(reg):
+                continue
+            if file_path == reg or file_path.startswith(reg + os.sep):
                 return True
         return False
+
 
     def rebuild_baseline(self):
         """Hashes all registered paths and stores results in the files_baseline table."""

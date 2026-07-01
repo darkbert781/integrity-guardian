@@ -65,28 +65,24 @@ class WatchdogThread(threading.Thread):
 
         while self.running:
             try:
-                # Derive watched dirs ONLY from user-registered config paths
-                # (not from the baselines table, which can contain auto-enrolled children)
-                config_paths = self.baseline_manager.config.get("monitored_paths", [])
-                current_dirs = set()
-                for p_info in config_paths:
-                    reg_path = p_info.get("path", "")
-                    if not reg_path:
-                        continue
-                    if os.path.isdir(reg_path):
-                        current_dirs.add(reg_path)
-                    elif os.path.exists(reg_path):
-                        # Single file registered — watch its parent, but the event handler
-                        # will only process events for files that are in baselines
-                        parent = os.path.dirname(reg_path)
-                        if parent:
-                            current_dirs.add(parent)
-
-                # Process PENDING baselines to build hashes for newly registered paths
+                # Derive watched dirs from the baselines DB table — this is the shared
+                # source of truth between the API process and this service process.
+                # The API writes new registrations to the DB, so reading from here
+                # ensures we always pick up new paths without needing a config reload.
                 rows = self.baseline_manager.db.query("SELECT file_path, current_hash, tier FROM baselines")
+                current_dirs = set()
                 for row in rows:
                     path = row['file_path']
                     is_dir = os.path.isdir(path)
+
+                    # Only add dirs that are themselves registered (top-level)
+                    # or parents of registered single files.
+                    # Check if this path is a directly registered path (not a child).
+                    if is_dir:
+                        current_dirs.add(path)
+                    elif os.path.exists(os.path.dirname(path)):
+                        current_dirs.add(os.path.dirname(path))
+
                     # Automatically build baseline for newly registered paths
                     if row['current_hash'] == 'PENDING':
                         self.baseline_manager.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
@@ -94,7 +90,7 @@ class WatchdogThread(threading.Thread):
                             threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row['tier']), daemon=True).start()
                         elif os.path.exists(path):
                             threading.Thread(target=self.baseline_manager._add_or_update_file, args=(path, row['tier']), daemon=True).start()
-                
+
                 # new dirs to watch
                 for d in current_dirs - watched_dirs:
                     if os.path.exists(d):
