@@ -49,13 +49,27 @@ def status():
 @click.option('--lock', is_flag=True)
 def register(path, tier, lock):
     """Add path to monitoring"""
-    click.echo(f"Registered {path} [tier={tier}, locked={lock}]")
+    try:
+        res = requests.post(f"{API_URL}/files/register", params={"file_path": path, "tier": tier})
+        if res.status_code == 200:
+            click.echo(f"Registered {path} [tier={tier}, locked={lock}]")
+        else:
+            click.echo(f"Failed to register: {res.text}")
+    except Exception as e:
+        click.echo(f"Could not connect to API. Is the service running? Error: {e}")
     
 @cli.command()
 @click.argument('path')
 def unregister(path):
     """Remove path from monitoring"""
-    click.echo(f"Unregistered {path}")
+    try:
+        res = requests.delete(f"{API_URL}/files/unregister", params={"file_path": path})
+        if res.status_code == 200:
+            click.echo(f"Unregistered {path}")
+        else:
+            click.echo(f"Failed to unregister: {res.text}")
+    except Exception as e:
+        click.echo(f"Could not connect to API. Is the service running? Error: {e}")
 
 @cli.command()
 @click.option('--open', 'open_only', is_flag=True)
