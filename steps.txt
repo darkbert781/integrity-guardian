@@ -1,63 +1,62 @@
-Integrity Guardian - Step-by-Step Execution Guide
+Integrity Guardian - Foolproof Manual Testing Guide
 
-This guide explains how to run each component of the Integrity Guardian system on your local machine.
+Follow these steps exactly to run the system after you restart your computer. The system has been configured to monitor a dedicated test folder so you can test email alerts and dynamic tracking instantly without waiting for a massive initial system scan.
 
-### Prerequisites
-Make sure you have Python (3.8+) and Node.js installed.
-(Note: The project uses local `venv_packages` for some scripts, but it's best to have dependencies installed globally or in a virtual environment).
-
-1. Install Python dependencies:
-   > pip install -r requirements.txt
+### Prerequisites (Do this once)
+Create a test folder on your desktop if it doesn't exist:
+    > mkdir C:\Users\Alinaswe\Desktop\ig_test_folder
 
 ---
 
-### Step 1: Run the Core Monitoring Service
-The core engine monitors the file system and registry. You can run it standalone (foreground) instead of as a Windows service for development/testing.
+### Step 1: Start the API Backend FIRST
+The API manages the database schema. It MUST be started before the Core Service to ensure the database tables are ready.
 
-Command:
-   > python service/run_standalone.py
-
-What it does: 
-Initializes the database, loads configurations, rebuilds the baseline, and starts the ETW, Registry, and Driver monitoring threads.
-
----
-
-### Step 2: Run the API Backend
-The FastAPI backend serves data to the CLI and Dashboard.
-
-Command (in a new terminal):
+1. Open a new PowerShell terminal.
+2. Navigate to the project directory:
+   > cd C:\Users\Alinaswe\Desktop\integrity_guardian
+3. Run the API:
    > python run_api.py
-
-What it does: 
-Starts the Uvicorn server on http://localhost:7890. It exposes REST endpoints for alerts, events, baseline management, and settings.
+4. Wait until you see "Application startup complete" and "Uvicorn running on http://0.0.0.0:7890".
 
 ---
 
-### Step 3: Run the Dashboard (Frontend)
-The web dashboard provides a UI for the system.
+### Step 2: Start the Core Monitoring Service
+This is the engine that watches your files and sends email alerts.
 
-Commands (in a new terminal):
-   > cd dashboard
-   > npm install
+1. Open a second PowerShell terminal.
+2. Navigate to the project directory.
+3. Run the Core Service:
+   > python service/run_standalone.py
+4. You will see it instantly rebuild the baseline for `ig_test_folder`.
+
+---
+
+### Step 3: Start the Frontend Dashboard
+The dashboard provides a visual interface for events and alerts.
+
+1. Open a third PowerShell terminal.
+2. Navigate to the dashboard directory:
+   > cd C:\Users\Alinaswe\Desktop\integrity_guardian\dashboard
+3. Start the UI:
    > npm run dev
-
-What it does: 
-Starts the Vite development server (usually on http://localhost:5173). It connects to the API backend to visualize system integrity status.
+4. Open your browser to http://localhost:3000
 
 ---
 
-### Step 4: Use the Command Line Interface (CLI)
-You can use the CLI tool to control the system and register paths for monitoring.
+### Step 4: Test the Live System!
+Now that all three components are running, you can test the real-time event pipeline and email alerts.
 
-Commands (in a new terminal, from the project root):
-- Check system status:
-   > python cli/ig.py status
+1. Open a fourth PowerShell terminal (or just use File Explorer).
+2. Create a new folder inside your test directory:
+   > mkdir C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder
+3. Create a file inside that new folder:
+   > echo "Hello World" > C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
+4. Modify the file:
+   > echo "Modified" >> C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
+5. Delete the file:
+   > del C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
 
-- Register a new directory to monitor:
-   > python cli/ig.py register "C:\Path\To\Monitor"
+**Check your inbox!** 
+You should instantly receive professional HTML email alerts for the folder creation, the file creation, the modification, and the deletion. You can also view these events flowing into your Dashboard in real-time.
 
-- Remove a directory from monitoring:
-   > python cli/ig.py unregister "C:\Path\To\Monitor"
-
-- List active alerts:
-   > python cli/ig.py alerts --open
+*Note: The global configuration is currently set to only monitor this test folder so you don't experience SQLite database locking delays during testing. Once you are satisfied, you can use the CLI or edit config/ig-config.json to monitor C:\Windows\System32 or any other path.*
