@@ -23,27 +23,30 @@ export function Login({ onLogin }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8f9fa] font-sans">
-      <div className="bg-white p-10 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-[400px] border border-[#e2e8f0]">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background font-sans relative overflow-hidden">
+      <div className="absolute top-0 w-full h-[300px] bg-primary/5 border-b border-borderHighlight pointer-events-none"></div>
+
+      <div className="bg-surface p-10 rounded-2xl shadow-xl w-[420px] border border-borderHighlight relative z-10 animate-fade-in-up">
         
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-4 shadow-sm bg-white border border-[#e2e8f0] overflow-hidden">
-            <img src="/logo.ico" alt="Integrity Guardian Logo" className="w-full h-full object-contain p-2" />
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 bg-surfaceHighlight border border-borderHighlight shadow-sm overflow-hidden relative group">
+            <img src="/logo.ico" alt="Integrity Guardian Logo" className="w-full h-full object-contain p-2 relative z-10" />
           </div>
-          <h2 className="text-2xl font-extrabold text-[#0f172a] tracking-tight">Integrity Guardian</h2>
+          <h2 className="text-3xl font-extrabold text-textMain tracking-tight">Integrity Guardian</h2>
+          <p className="text-xs text-primary font-mono uppercase tracking-widest mt-2">Secure Authentication Terminal</p>
         </div>
 
         {error && (
-          <div className="bg-[#fef2f2] border border-[#fca5a5] text-[#dc2626] mb-5 p-3 rounded text-sm text-center font-medium">
+          <div className="bg-criticalBg border border-critical/30 text-critical mb-6 p-4 rounded-lg text-sm text-center font-bold">
             {error}
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <div>
-            <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Username</label>
+            <label className="block text-xs font-bold text-textMuted uppercase tracking-widest mb-3">Operator ID</label>
             <input 
-              className="w-full p-2.5 bg-[#f8f9fa] text-[#0f172a] rounded-lg border border-[#cbd5e1] focus:bg-white focus:border-[#0052cc] focus:ring-2 focus:ring-[#eff6ff] outline-none transition-all" 
+              className="w-full p-3.5 bg-background text-textMain rounded-xl border border-borderHighlight focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all font-mono" 
               placeholder="bwalya" 
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -51,9 +54,9 @@ export function Login({ onLogin }) {
           </div>
 
           <div className="mb-2">
-            <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-textMuted uppercase tracking-widest mb-3">Passkey</label>
             <input 
-              className="w-full p-2.5 bg-[#f8f9fa] text-[#0f172a] rounded-lg border border-[#cbd5e1] focus:bg-white focus:border-[#0052cc] focus:ring-2 focus:ring-[#eff6ff] outline-none transition-all" 
+              className="w-full p-3.5 bg-background text-textMain rounded-xl border border-borderHighlight focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all font-mono" 
               type="password" 
               placeholder="••••••••" 
               value={password}
@@ -65,8 +68,8 @@ export function Login({ onLogin }) {
           <button 
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-[#0052cc] hover:bg-[#0042a3] text-white py-2.5 rounded-lg font-semibold transition-all disabled:opacity-50 mt-2 shadow-sm">
-            {loading ? 'Authenticating...' : 'Sign In'}
+            className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-bold transition-all disabled:opacity-50 mt-4 tracking-widest uppercase hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20">
+            {loading ? 'AUTHENTICATING...' : 'INITIALIZE SESSION'}
           </button>
         </div>
         

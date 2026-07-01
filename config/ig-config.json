@@ -1,32 +1,6 @@
 {
   "version": "2.0",
-  "monitored_paths": [
-    {
-      "path": "C:\\Windows\\System32",
-      "tier": "critical",
-      "recursive": false
-    },
-    {
-      "path": "C:\\Windows\\System32\\drivers",
-      "tier": "critical",
-      "recursive": false
-    },
-    {
-      "path": "C:\\Windows\\SysWOW64",
-      "tier": "critical",
-      "recursive": false
-    },
-    {
-      "path": "C:\\Program Files",
-      "tier": "standard",
-      "recursive": true
-    },
-    {
-      "path": "C:\\ProgramData",
-      "tier": "standard",
-      "recursive": true
-    }
-  ],
+  "monitored_paths": [],
   "registry_keys": [
     "HKLM\\SYSTEM\\CurrentControlSet\\Services",
     "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
@@ -94,5 +68,5 @@
   "db_path": "integrity.db",
   "log_retention_days": 365,
   "dashboard_port": 7890,
-  "hmac_signature": "35302446837f31f804f22b9d315b96bde006384cfd8a1cec74077f41728085ba"
+  "hmac_signature": "24cb14d2f79796b25ace0ca57fff15b410de73bd719516c94348510fd4493ba1"
 }

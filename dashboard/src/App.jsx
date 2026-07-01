@@ -43,15 +43,15 @@ function SidebarLink({ to, label, icon: Icon, end }) {
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-colors border-l-[3px] ${
+        `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border-l-[3px] ${
           isActive
-            ? 'bg-[#131921] text-white border-[#0052cc] font-semibold'
-            : 'text-gray-400 border-transparent hover:bg-[#1c2531] hover:text-gray-100'
+            ? 'nav-link-active'
+            : 'text-sidebarText border-transparent sidebar-link-hover'
         }`
       }
     >
       <Icon className="w-4 h-4 flex-shrink-0" />
-      <span>{label}</span>
+      <span className="font-medium tracking-wide">{label}</span>
     </NavLink>
   );
 }
@@ -61,22 +61,25 @@ function DashboardLayout({ onLogout }) {
     <div className="min-h-screen bg-background text-textMain font-sans flex">
 
       {/* ── Sidebar ───────────────────────────────────────────────── */}
-      <aside className="w-64 bg-[#232f3e] flex-shrink-0 flex flex-col shadow-lg z-10">
+      <aside className="w-64 bg-sidebar flex-shrink-0 flex flex-col z-20 border-r border-white/5">
 
         {/* Logo bar */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-700 bg-[#131921]">
-          <Shield className="w-5 h-5 text-[#0052cc]" />
-          <span className="text-white font-semibold text-sm tracking-widest uppercase">
-            Integrity Guardian
-          </span>
+        <div className="h-[72px] flex items-center gap-3 px-5 border-b border-white/10">
+          <div className="p-2 bg-primary/20 rounded-xl">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-white font-bold text-sm tracking-wide leading-tight">Integrity</p>
+            <p className="text-primary text-xs font-semibold tracking-widest uppercase">Guardian</p>
+          </div>
         </div>
 
         {/* Nav links */}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-2">
+        <div className="flex-1 overflow-y-auto px-3 py-5">
+          <p className="text-[10px] font-bold text-sidebarText/60 uppercase tracking-widest mb-3 px-3">
             Navigation
           </p>
-          <nav className="flex flex-col gap-1">
+          <nav className="flex flex-col gap-0.5">
             {NAV.map(({ to, label, icon }) => (
               <SidebarLink key={to} to={to} label={label} icon={icon} end={to === '/'} />
             ))}
@@ -84,41 +87,45 @@ function DashboardLayout({ onLogout }) {
         </div>
 
         {/* System section */}
-        <div className="px-3 py-4 border-t border-gray-700 bg-[#131921]">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-2">
+        <div className="px-3 py-4 border-t border-white/10">
+          <p className="text-[10px] font-bold text-sidebarText/60 uppercase tracking-widest mb-3 px-3">
             System
           </p>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             <SidebarLink to="/settings" label="Configuration" icon={SettingsIcon} />
-            <button onClick={onLogout} className="flex items-center gap-3 px-3 py-2.5 rounded text-sm text-gray-400 border-l-[3px] border-transparent hover:bg-[#1c2531] hover:text-gray-100 transition-colors w-full text-left">
+            <button onClick={onLogout} className="sidebar-link-hover flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-sidebarText border-l-[3px] border-transparent transition-all duration-200 w-full text-left">
               <LogOut className="w-4 h-4 flex-shrink-0" />
-              <span>Sign Out</span>
+              <span className="font-medium tracking-wide">Sign Out</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* ── Main area ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* Top bar */}
-        <header className="h-16 bg-white border-b border-border flex items-center justify-between px-8 flex-shrink-0">
-          <div className="flex items-center gap-2 text-sm text-textMuted">
-            <span className="font-semibold text-textMain">Enterprise FIM</span>
-            <span>/</span>
-            <span>us-east-1</span>
+        <header className="h-[72px] bg-surface border-b border-borderHighlight flex items-center justify-between px-8 flex-shrink-0 sticky top-0 z-10">
+          <div className="flex items-center gap-2 text-sm text-textMuted font-mono">
+            <span className="inline-flex items-center gap-1.5 bg-successBg text-primaryDark text-xs font-bold px-3 py-1 rounded-full border border-success/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              Enterprise FIM
+            </span>
+            <span className="text-borderHighlight mx-1">/</span>
+            <span className="text-textMuted">us-east-1</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#0052cc] text-white rounded-full flex items-center justify-center text-xs font-bold">
-              A
+          <div className="flex items-center gap-4">
+            <div className="relative group cursor-pointer">
+              <div className="w-9 h-9 bg-primaryDark text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm transition-all group-hover:bg-primary">
+                A
+              </div>
             </div>
-            <span className="text-sm font-medium text-textMain">Admin User</span>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-8 overflow-auto bg-background">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-[1600px] mx-auto h-full animate-fade-in-up">
             <Routes>
               <Route path="/"           element={<Overview />} />
               <Route path="/events"     element={<EventFeed />} />

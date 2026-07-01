@@ -4,9 +4,12 @@ import { Settings as SettingsIcon, Save, CheckCircle, Send } from 'lucide-react'
 
 function Section({ title, children }) {
   return (
-    <div className="enterprise-card p-6 flex flex-col">
-      <h3 className="text-sm font-bold text-textMain mb-5 uppercase tracking-wider">{title}</h3>
-      <div className="flex-1">
+    <div className="enterprise-card p-6 flex flex-col bg-surface border border-borderHighlight shadow-sm">
+      <h3 className="text-sm font-bold text-textMain uppercase tracking-widest mb-6 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+        {title}
+      </h3>
+      <div className="flex-1 relative z-10">
         {children}
       </div>
     </div>
@@ -43,69 +46,70 @@ export function Settings() {
   };
 
   const Field = ({ label, field, type = 'text', hint, placeholder }) => (
-    <div className="mb-5">
-      <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-2">{label}</label>
+    <div className="mb-6">
+      <label className="block text-xs font-bold text-textMuted uppercase tracking-widest mb-2">{label}</label>
       <input
         type={type}
         value={config[field] ?? ''}
         placeholder={placeholder}
         onChange={e => setConfig(prev => ({ ...prev, [field]: e.target.value }))}
-        className="w-full bg-[#f8f9fa] border border-border rounded px-4 py-2.5 text-sm text-textMain outline-none focus:border-primary transition-colors font-mono"
+        className="w-full bg-surface border border-borderHighlight rounded-lg px-4 py-3 text-sm text-textMain outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all font-mono placeholder-textMuted/50 shadow-sm"
       />
-      {hint && <p className="mt-1.5 text-xs text-textMuted">{hint}</p>}
+      {hint && <p className="mt-2 text-[10px] uppercase tracking-wider text-textMuted leading-relaxed">{hint}</p>}
     </div>
   );
 
   return (
-    <div className="flex flex-col h-full gap-6 max-w-6xl mx-auto w-full">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full gap-8 max-w-6xl mx-auto w-full animate-fade-in-up">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-textMain tracking-tight">System Configuration</h2>
-          <p className="text-sm text-textMuted mt-1">Manage Integrity Guardian operational parameters</p>
+          <h2 className="text-3xl font-bold text-textMain tracking-tight">System Configuration</h2>
+          <p className="text-sm text-textMuted mt-2">Manage Integrity Guardian global operating parameters.</p>
         </div>
         <div className="flex items-center gap-4">
           {saved && (
-            <span className="flex items-center gap-2 text-sm font-semibold text-success">
-              <CheckCircle className="w-4 h-4" /> Saved
+            <span className="flex items-center gap-2 text-sm font-bold text-success uppercase tracking-widest animate-pulse">
+              <CheckCircle className="w-4 h-4" /> Config Saved
             </span>
           )}
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="flex items-center gap-2 bg-primary hover:bg-[#0042a3] text-white text-sm font-semibold px-6 py-2.5 rounded transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-sm text-sm font-bold px-6 py-2.5 rounded-lg transition-all duration-300 disabled:opacity-50 uppercase tracking-widest"
           >
             <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save Configuration'}
+            {saving ? 'COMMITTING...' : 'SAVE CONFIG'}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center p-16">
-          <SettingsIcon className="w-6 h-6 text-primary animate-spin" />
+        <div className="flex items-center justify-center p-20 flex-col gap-4">
+          <SettingsIcon className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm font-mono text-textMuted">Loading configuration matrix...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-          <div className="flex flex-col gap-6">
-            <Section title="General Environment">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
+          <div className="flex flex-col gap-8">
+            <Section title="Environment Architecture">
               <Field label="Database Path" field="db_path" hint="Absolute path to the encrypted SQLCipher database" placeholder="C:\ProgramData\IntegrityGuardian\integrity.db" />
-              <Field label="Vault Directory" field="vault_dir" hint="Storage location for AES-256 encrypted file snapshots. Default: vault/ inside your project folder." placeholder="C:\ProgramData\IntegrityGuardian\Vault" />
-              <div className="mb-5">
-                <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-2">Log Level</label>
+              <Field label="Vault Directory" field="vault_dir" hint="Storage location for AES-256 encrypted file snapshots." placeholder="C:\ProgramData\IntegrityGuardian\Vault" />
+              <div className="mb-2">
+                <label className="block text-xs font-bold text-textMuted uppercase tracking-widest mb-2">Log Verbosity</label>
                 <select
                   value={config.log_level ?? 'INFO'}
                   onChange={e => setConfig(prev => ({ ...prev, log_level: e.target.value }))}
-                  className="w-full bg-[#f8f9fa] border border-border rounded px-4 py-2.5 text-sm text-textMain outline-none focus:border-primary transition-colors"
+                  className="w-full bg-surface border border-borderHighlight rounded-lg px-4 py-3 text-sm font-bold tracking-wider text-textMain outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-sm"
                 >
-                  <option value="DEBUG">DEBUG - Verbose output</option>
-                  <option value="INFO">INFO - Standard operation</option>
-                  <option value="WARNING">WARNING - Issues only</option>
-                  <option value="ERROR">ERROR - Critical failures</option>
+                  <option value="DEBUG">DEBUG - VERBOSE OUTPUT</option>
+                  <option value="INFO">INFO - STANDARD OPERATION</option>
+                  <option value="WARNING">WARNING - ANOMALIES ONLY</option>
+                  <option value="ERROR">ERROR - CRITICAL FAILURES</option>
                 </select>
               </div>
             </Section>
 
-            <Section title="AI & Query Engine">
+            <Section title="AI Intelligence Engine">
               <Field
                 label="Gemini API Key"
                 field="gemini_api_key"
@@ -113,83 +117,92 @@ export function Settings() {
                 hint="Get a free key at: aistudio.google.com — Set this as GEMINI_API_KEY environment variable and restart the backend."
                 placeholder="AIza..."
               />
-              <div className="enterprise-card p-4 bg-[#eff6ff] border-[#93c5fd]">
-                <p className="text-xs font-bold text-[#1e40af] mb-1">How to activate Gemini AI</p>
-                <ol className="text-xs text-[#1e40af] list-decimal list-inside space-y-1">
-                  <li>Go to <span className="font-mono">aistudio.google.com</span> and create a free API key</li>
-                  <li>Open a new terminal in your project root</li>
-                  <li>Run: <span className="font-mono bg-white px-1 py-0.5 rounded">set GEMINI_API_KEY=your_key_here</span></li>
-                  <li>Restart the backend: <span className="font-mono bg-white px-1 py-0.5 rounded">python run_api.py</span></li>
+              <div className="enterprise-card p-5 bg-primary/5 border border-primary/30 shadow-inner">
+                <p className="text-xs font-bold text-primary tracking-widest uppercase mb-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  AI Activation Sequence
+                </p>
+                <ol className="text-xs text-textMuted list-decimal list-inside space-y-2 font-mono">
+                  <li>Generate token at <span className="text-primary font-bold">aistudio.google.com</span></li>
+                  <li>Initialize new kernel terminal</li>
+                  <li>Execute: <span className="bg-background px-2 py-1 rounded border border-borderHighlight text-textMain">set GEMINI_API_KEY=&lt;token&gt;</span></li>
+                  <li>Restart service: <span className="bg-background px-2 py-1 rounded border border-borderHighlight text-textMain">python run_api.py</span></li>
                 </ol>
               </div>
             </Section>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <Section title="Resend Email Alerts">
-              <div className="enterprise-card p-4 bg-[#fffbeb] border-[#fbbf24] mb-5">
-                <p className="text-xs font-bold text-[#92400e] mb-1">Setup Instructions</p>
-                <ol className="text-xs text-[#92400e] list-decimal list-inside space-y-1">
-                  <li>Create a free account at <span className="font-mono">resend.com</span></li>
-                  <li>Go to <span className="font-mono">API Keys</span> and create a new key</li>
-                  <li>Add and verify your sender domain (or use Resend's shared domain for testing)</li>
-                  <li>Set the environment variables below and restart the backend</li>
+          <div className="flex flex-col gap-8">
+            <Section title="External Alerting">
+              <div className="enterprise-card p-5 bg-warning/5 border border-warning/30 shadow-inner mb-6">
+                <p className="text-xs font-bold text-warning tracking-widest uppercase mb-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                  Resend Email Config
+                </p>
+                <ol className="text-xs text-textMuted list-decimal list-inside space-y-2 font-mono">
+                  <li>Provision account at <span className="text-warning font-bold">resend.com</span></li>
+                  <li>Generate API Token</li>
+                  <li>Verify Sender Domain</li>
+                  <li>Define environment variables & Restart</li>
                 </ol>
               </div>
               <Field
                 label="Resend API Key"
                 field="resend_api_key"
                 type="password"
-                hint="Set as RESEND_API_KEY environment variable. Get from resend.com/api-keys"
+                hint="Set as RESEND_API_KEY environment variable."
                 placeholder="re_..."
               />
               <Field
                 label="Sender Email (From)"
                 field="resend_from_email"
-                hint="Must be from a verified domain on Resend. Set as RESEND_FROM_EMAIL."
+                hint="Must be from a verified domain on Resend."
                 placeholder="alerts@yourdomain.com"
               />
               <Field
                 label="Alert Recipient (To)"
                 field="resend_to_email"
-                hint="Email address that will receive all security alerts. Set as RESEND_TO_EMAIL."
+                hint="Email address that will receive critical security alerts."
                 placeholder="admin@yourorganization.com"
               />
 
-              <div className="flex items-center gap-3 mt-2">
+              <div className="flex items-center gap-4 mt-2">
                 <button
                   onClick={handleTestEmail}
                   disabled={testingEmail}
-                  className="flex items-center gap-2 bg-white border border-border hover:bg-[#f8f9fa] text-textMain text-sm font-semibold px-4 py-2 rounded transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 bg-surface border border-borderHighlight hover:bg-surfaceHighlight hover:border-primary/30 text-textMain text-xs font-bold px-4 py-2.5 rounded-lg transition-all uppercase tracking-widest disabled:opacity-50 shadow-sm"
                 >
-                  <Send className="w-4 h-4 text-primary" />
-                  {testingEmail ? 'Sending...' : 'Send Test Email'}
+                  <Send className={`w-4 h-4 ${testingEmail ? 'text-primary animate-pulse' : 'text-textMuted'}`} />
+                  {testingEmail ? 'TRANSMITTING...' : 'TEST CONNECTION'}
                 </button>
                 {emailTestResult && (
-                  <span className={`text-sm font-semibold ${emailTestResult.success ? 'text-success' : 'text-critical'}`}>
-                    {emailTestResult.success ? 'Test email sent!' : `Failed: ${emailTestResult.error}`}
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${emailTestResult.success ? 'text-success' : 'text-critical'}`}>
+                    {emailTestResult.success ? 'TRANSMISSION SUCCESSFUL' : `FAILED: ${emailTestResult.error}`}
                   </span>
                 )}
               </div>
             </Section>
 
-            <Section title="System Information">
+            <Section title="System Telemetry">
               <div className="flex flex-col gap-4">
-                <div className="flex justify-between border-b border-border pb-3">
-                  <span className="text-sm font-semibold text-textMuted">API Version</span>
-                  <span className="text-sm font-mono text-textMain">2.0.0</span>
+                <div className="flex justify-between border-b border-borderHighlight pb-3">
+                  <span className="text-xs font-bold text-textMuted uppercase tracking-widest">API Version</span>
+                  <span className="text-xs font-mono text-primary font-bold">2.0.0-PROD</span>
                 </div>
-                <div className="flex justify-between border-b border-border pb-3">
-                  <span className="text-sm font-semibold text-textMuted">Driver Altitude</span>
-                  <span className="text-sm font-mono text-textMain">320000</span>
+                <div className="flex justify-between border-b border-borderHighlight pb-3">
+                  <span className="text-xs font-bold text-textMuted uppercase tracking-widest">Driver Altitude</span>
+                  <span className="text-xs font-mono text-primary font-bold">320000 (Minifilter)</span>
                 </div>
-                <div className="flex justify-between border-b border-border pb-3">
-                  <span className="text-sm font-semibold text-textMuted">Vault Location</span>
-                  <span className="text-sm font-mono text-textMain truncate max-w-[200px]" title="vault/">vault/</span>
+                <div className="flex justify-between border-b border-borderHighlight pb-3">
+                  <span className="text-xs font-bold text-textMuted uppercase tracking-widest">Vault Storage</span>
+                  <span className="text-xs font-mono text-textMain truncate max-w-[200px]" title="vault/">vault/</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-semibold text-textMuted">UI Status</span>
-                  <span className="text-sm font-bold text-success">Connected</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-textMuted uppercase tracking-widest">Interface Link</span>
+                  <span className="text-[10px] font-bold text-success uppercase tracking-widest px-2 py-1 bg-success/10 border border-success/30 rounded flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
+                    SECURE ACTIVE
+                  </span>
                 </div>
               </div>
             </Section>

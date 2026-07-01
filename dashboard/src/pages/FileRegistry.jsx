@@ -112,54 +112,59 @@ export function FileRegistry() {
   );
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full gap-8 animate-fade-in-up">
       <DirectoryPicker
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={handlePickerSelect}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-textMain tracking-tight">File Registry</h2>
-          <p className="text-sm text-textMuted mt-1">Baseline monitoring configuration</p>
+          <h2 className="text-3xl font-bold text-textMain tracking-tight">File Registry</h2>
+          <p className="text-sm text-textMuted mt-2">Kernel-level baseline monitoring asset configuration.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={handleDeleteAll}
-            className="flex items-center gap-2 bg-[#fef2f2] border border-[#f87171] px-4 py-2 rounded text-sm font-medium text-[#991b1b] hover:bg-[#fee2e2] transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-critical/10 border border-critical/30 px-5 py-2.5 rounded-lg text-sm font-bold text-critical hover:bg-critical hover:text-white transition-all duration-300 shadow-sm"
           >
             <Trash2 className="w-4 h-4" />
-            Delete All
+            PURGE ALL
           </button>
           <button
             onClick={fetchFiles}
-            className="flex items-center gap-2 bg-white border border-border px-4 py-2 rounded text-sm font-medium text-textMain hover:bg-[#f8f9fa] transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-surface border border-borderHighlight px-5 py-2.5 rounded-lg text-sm font-bold text-textMain hover:bg-surfaceHighlight hover:text-primary transition-all duration-300 shadow-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+            REFRESH
           </button>
         </div>
       </div>
 
       {/* Registration Panel */}
-      <div className="enterprise-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-textMain uppercase tracking-wider">Register Monitored Paths</h3>
+      <div className="enterprise-card p-6 bg-surface border border-borderHighlight shadow-md border-l-4 border-l-secondary relative overflow-hidden">
+        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-secondary/10 blur-[50px] rounded-full pointer-events-none"></div>
+        
+        <div className="flex items-center justify-between mb-6 relative z-10">
+          <h3 className="text-sm font-bold text-textMain uppercase tracking-widest flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></div>
+            Register Monitored Assets
+          </h3>
           <button
             onClick={addPathRow}
-            className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#0042a3] transition-colors"
+            className="flex items-center gap-2 text-xs font-bold text-white transition-colors bg-secondary hover:bg-secondary/90 px-3 py-1.5 rounded-md shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Add Another Path
+            ADD ASSET
           </button>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 relative z-10">
           {pendingPaths.map((path, idx) => (
-            <div key={idx} className="flex gap-3 items-center">
-              <div className="flex-1 flex items-center border border-border rounded bg-[#f8f9fa] px-3 py-2 focus-within:border-primary transition-colors">
-                <FileBox className="w-4 h-4 text-textMuted mr-3 flex-shrink-0" />
+            <div key={idx} className="flex gap-4 items-center group">
+              <div className="flex-1 flex items-center border border-borderHighlight rounded-lg bg-surface shadow-sm px-4 py-2.5 focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 transition-all duration-300">
+                <FileBox className="w-5 h-5 text-textMuted mr-3 flex-shrink-0 group-hover:text-secondary transition-colors" />
                 <input
                   className="flex-1 bg-transparent border-none outline-none text-sm text-textMain font-mono placeholder-textMuted"
                   placeholder={`C:\\Directory\\to\\monitor`}
@@ -170,102 +175,111 @@ export function FileRegistry() {
                 <button
                   onClick={() => openPickerForIndex(idx)}
                   disabled={isRegistering}
-                  className="ml-2 flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#0042a3] border-l border-border pl-3 transition-colors whitespace-nowrap"
+                  className="ml-3 flex items-center gap-1.5 text-xs font-bold text-textMuted hover:text-secondary border-l border-borderHighlight pl-4 transition-colors whitespace-nowrap"
                   title="Browse PC for directory"
                 >
                   <FolderOpen className="w-4 h-4" />
-                  Browse
+                  BROWSE
                 </button>
               </div>
               <select
-                className="border border-border rounded px-3 py-2 bg-[#f8f9fa] text-sm text-textMain outline-none w-40 focus:border-primary"
+                className="border border-borderHighlight rounded-lg px-4 py-3 bg-surface shadow-sm text-sm text-textMain font-bold uppercase tracking-wider outline-none w-48 focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                 value={activeTiers[idx]}
                 onChange={e => updateTier(idx, e.target.value)}
                 disabled={isRegistering}
               >
-                <option value="critical">Critical</option>
-                <option value="standard">Standard</option>
-                <option value="informational">Informational</option>
+                <option value="critical">CRITICAL</option>
+                <option value="standard">STANDARD</option>
+                <option value="informational">INFO</option>
               </select>
               {pendingPaths.length > 1 && (
                 <button
                   onClick={() => removePathRow(idx)}
-                  className="p-2 rounded border border-border hover:bg-[#fef2f2] hover:border-critical transition-colors"
+                  className="p-3 rounded-lg border border-borderHighlight bg-surface hover:bg-critical hover:border-critical hover:text-white transition-all text-textMuted shadow-sm"
                 >
-                  <X className="w-4 h-4 text-textMuted" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
           ))}
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-6 flex justify-end relative z-10">
           <button
             onClick={handleRegisterAll}
             disabled={isRegistering || pendingPaths.every(p => !p.trim())}
-            className="flex items-center gap-2 bg-primary hover:bg-[#0042a3] text-white text-sm font-semibold px-6 py-2.5 rounded transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-secondary hover:bg-secondary/90 text-white shadow-sm text-sm font-bold px-8 py-3 rounded-lg transition-all duration-300 disabled:opacity-50 uppercase tracking-widest"
           >
             <Plus className="w-4 h-4" />
             {isRegistering
-              ? 'Registering...'
-              : `Register ${pendingPaths.filter(p => p.trim()).length} Path(s)`}
+              ? 'COMMITTING...'
+              : `COMMIT ${pendingPaths.filter(p => p.trim()).length} ASSET(S)`}
           </button>
         </div>
       </div>
 
       {/* File list */}
-      <div className="flex-1 enterprise-card flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-border bg-[#f8f9fa] flex items-center justify-between">
-          <div className="flex items-center gap-2 border border-border rounded bg-white px-3 py-1.5 w-64">
-            <Search className="w-4 h-4 text-textMuted" />
+      <div className="flex-1 enterprise-card flex flex-col overflow-hidden shadow-md border border-borderHighlight bg-surface">
+        <div className="p-5 border-b border-borderHighlight bg-surfaceHighlight flex items-center justify-between">
+          <div className="flex items-center gap-3 bg-surface border border-borderHighlight rounded-lg px-4 py-2.5 w-80 shadow-sm focus-within:ring-2 focus-within:ring-primary/20">
+            <Search className="w-4 h-4 text-primary" />
             <input
-              className="bg-transparent border-none outline-none text-xs w-full text-textMain"
-              placeholder="Search registered paths..."
+              className="bg-transparent border-none outline-none text-sm w-full text-textMain placeholder-textMuted font-mono"
+              placeholder="Search active telemetry paths..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <span className="text-xs font-bold text-textMuted uppercase tracking-wider">{filtered.length} Paths</span>
+          <div className="bg-background border border-borderHighlight px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-primary uppercase tracking-widest">{filtered.length} ASSETS ACTIVE</span>
+          </div>
         </div>
-        <div className="flex-1 overflow-auto">
-          <table className="enterprise-table">
-            <thead>
+        
+        <div className="flex-1 overflow-auto bg-surface">
+          <table className="enterprise-table relative">
+            <thead className="sticky top-0 z-10">
               <tr>
-                <th className="w-12"></th>
-                <th>File Path</th>
-                <th>Tier</th>
-                <th>Lock Status</th>
-                <th className="w-16">Actions</th>
+                <th className="w-12 text-center"></th>
+                <th>Monitored Asset Path</th>
+                <th>Protection Tier</th>
+                <th>Security Lock</th>
+                <th className="w-20 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center py-12 text-textMuted text-sm">
-                    {search ? 'No paths match your search.' : 'No monitored files found. Register a path above.'}
+                  <td colSpan="5" className="text-center py-24 text-textMuted">
+                    <div className="flex flex-col items-center gap-4 opacity-50">
+                      <FileBox className="w-12 h-12" />
+                      <p className="text-lg font-bold text-textMain">{search ? 'No assets match query.' : 'No telemetry assets found.'}</p>
+                      <p className="text-sm">Register a path above to begin monitoring.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filtered.map((f, idx) => (
-                  <tr key={idx}>
-                    <td className="text-center"><FileBox className="w-4 h-4 text-textMuted inline-block" /></td>
-                    <td className="font-mono text-xs">{truncatePath(f.file_path)}</td>
+                  <tr key={idx} className="group hover:bg-surfaceHighlight/30 transition-colors">
+                    <td className="text-center">
+                      <FileBox className="w-4 h-4 text-textMuted inline-block group-hover:text-primary transition-colors" />
+                    </td>
+                    <td className="font-mono text-xs text-textMain tracking-tight group-hover:text-primary transition-colors">{truncatePath(f.file_path)}</td>
                     <td>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                        f.tier === 'critical' ? 'bg-[#fef2f2] text-[#991b1b] border-[#f87171]' :
-                        f.tier === 'informational' ? 'bg-[#eff6ff] text-[#1e40af] border-[#93c5fd]' :
-                        'bg-[#f8f9fa] text-textMuted border-border'
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded border ${
+                        f.tier === 'critical' ? 'bg-critical/10 text-critical border-critical/30' :
+                        f.tier === 'informational' ? 'bg-primary/10 text-primary border-primary/30' :
+                        'bg-surfaceHighlight text-textMuted border-borderHighlight'
                       }`}>
                         {f.tier}
                       </span>
                     </td>
                     <td>
                       {f.is_locked ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success">
-                          <Lock className="w-3.5 h-3.5" /> Locked
+                        <span className="inline-flex items-center gap-2 text-xs font-bold text-success uppercase tracking-widest bg-success/10 px-2 py-1 rounded border border-success/20">
+                          <Lock className="w-3.5 h-3.5" /> Secured
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs text-textMuted">
+                        <span className="inline-flex items-center gap-2 text-xs font-bold text-textMuted uppercase tracking-widest bg-surfaceHighlight px-2 py-1 rounded border border-borderHighlight">
                           <Unlock className="w-3.5 h-3.5" /> Monitored
                         </span>
                       )}
@@ -273,8 +287,8 @@ export function FileRegistry() {
                     <td className="text-center">
                       <button 
                         onClick={() => handleDelete(f.file_path)}
-                        className="p-1.5 text-textMuted hover:text-critical rounded hover:bg-[#fef2f2] transition-colors"
-                        title="Delete path"
+                        className="p-2 text-textMuted hover:text-critical rounded hover:bg-critical/20 transition-all border border-transparent hover:border-critical/30"
+                        title="Remove telemetry asset"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -13,39 +13,43 @@ const SAMPLE_QUESTIONS = [
 function Bubble({ msg }) {
   const isUser = msg.role === 'user';
   return (
-    <div className={`flex gap-3 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex gap-4 mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
       {!isUser && (
-        <div className="w-8 h-8 rounded bg-[#f1f5f9] border border-border flex items-center justify-center flex-shrink-0">
-          <Bot className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <Bot className="w-5 h-5 text-primary relative z-10" />
         </div>
       )}
-      <div className={`max-w-[80%] rounded p-4 ${isUser ? 'bg-primary text-white' : 'enterprise-card text-textMain'}`}>
+      <div className={`max-w-[85%] rounded-2xl p-5 ${isUser ? 'bg-primary text-white rounded-tr-sm shadow-sm' : 'bg-surface border border-borderHighlight text-textMain rounded-tl-sm shadow-sm'}`}>
         {msg.ai_response && (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap mb-3">{msg.ai_response}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap mb-4 font-medium text-textMain">{msg.ai_response}</p>
         )}
         {!msg.ai_response && (
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
         )}
         {msg.results && msg.results.length > 0 && (
-          <div className="mt-3 flex flex-col gap-2">
-            <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider">Matched Events</p>
+          <div className="mt-4 flex flex-col gap-3">
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              Matched Telemetry
+            </p>
             {msg.results.map((r, i) => (
-              <div key={i} className="bg-[#f8f9fa] border border-border rounded p-3 text-textMain">
-                <div className="flex items-center gap-2 mb-1">
+              <div key={i} className="bg-background border border-borderHighlight rounded-lg p-3 text-textMain hover:border-primary/30 transition-colors shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4 text-textMuted" />
-                  <span className="font-mono text-xs flex-1 truncate">{r.file_path || 'Unknown path'}</span>
+                  <span className="font-mono text-xs flex-1 truncate text-secondary font-bold">{r.file_path || 'Unknown path'}</span>
                   {r.severity && <SeverityBadge severity={r.severity} />}
                 </div>
-                {r.event_type && <p className="text-xs text-textMuted">{r.event_type} — {r.timestamp}</p>}
+                {r.event_type && <p className="text-xs text-textMuted font-mono uppercase tracking-widest">{r.event_type} <span className="text-borderHighlight mx-1">|</span> {r.timestamp}</p>}
               </div>
             ))}
           </div>
         )}
-        {isUser && <p className="text-sm">{msg.text}</p>}
+        {isUser && <p className="text-sm font-medium">{msg.text}</p>}
       </div>
       {isUser && (
-        <div className="w-8 h-8 rounded bg-[#e2e8f0] flex items-center justify-center flex-shrink-0">
-          <User className="w-5 h-5 text-textMuted" />
+        <div className="w-10 h-10 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+          <User className="w-5 h-5 text-secondary relative z-10" />
         </div>
       )}
     </div>
@@ -57,7 +61,7 @@ export function NLQuery() {
     {
       role: 'assistant',
       ai_response:
-        'Hello. I am the Integrity Guardian forensic assistant powered by Google Gemini. Ask me anything about file integrity events, process activity, or anomalies — I will query the live database and analyse the results in real time. If Gemini is not yet configured, I will fall back to keyword matching.',
+        'Secure connection established. I am the Integrity Guardian forensic AI powered by Google Gemini. Query the telemetry database for file integrity anomalies, process heuristics, or active threats. Falling back to keyword clustering if LLM link is offline.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -83,8 +87,8 @@ export function NLQuery() {
           ai_response:
             res.data.ai_response ||
             (res.data.results?.length
-              ? `Found ${res.data.results.length} matching events.`
-              : 'No results found.'),
+              ? `Identified ${res.data.results.length} related telemetry events.`
+              : 'Zero anomalous events detected for query.'),
           results: res.data.results || [],
         },
       ]);
@@ -93,7 +97,7 @@ export function NLQuery() {
         ...prev,
         {
           role: 'assistant',
-          ai_response: `Error querying the database: ${err.response?.data?.detail || err.message}`,
+          ai_response: `Database link error: ${err.response?.data?.detail || err.message}`,
         },
       ]);
     } finally {
@@ -102,57 +106,61 @@ export function NLQuery() {
   };
 
   return (
-    <div className="flex flex-col h-full gap-4 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col h-full gap-6 max-w-4xl mx-auto w-full animate-fade-in-up">
       <div>
-        <h2 className="text-2xl font-bold text-textMain tracking-tight">Forensic Query Assistant</h2>
-        <p className="text-sm text-textMuted mt-1">
-          Powered by Google Gemini — natural language interface to the live event database
+        <h2 className="text-3xl font-bold text-textMain tracking-tight">Forensic Interface</h2>
+        <p className="text-sm text-textMuted mt-2">
+          Gemini-powered natural language query engine for live telemetry.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {SAMPLE_QUESTIONS.map(q => (
           <button
             key={q}
             onClick={() => sendMessage(q)}
             disabled={loading}
-            className="text-xs font-semibold px-3 py-1.5 rounded border border-border bg-white text-textMuted hover:text-primary hover:border-primary transition-colors disabled:opacity-50"
+            className="text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-borderHighlight bg-surface text-textMuted hover:text-primary hover:border-primary/30 hover:bg-primary/5 shadow-sm transition-all duration-300 disabled:opacity-50"
           >
             {q}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 enterprise-card p-6 overflow-y-auto bg-[#f8f9fa]">
-        {messages.map((m, i) => <Bubble key={i} msg={m} />)}
-        {loading && (
-          <div className="flex gap-3 mb-4 justify-start">
-            <div className="w-8 h-8 rounded bg-[#f1f5f9] border border-border flex items-center justify-center flex-shrink-0">
-              <Bot className="w-5 h-5 text-primary" />
+      <div className="flex-1 enterprise-card p-6 overflow-y-auto bg-surface border border-borderHighlight border-t-4 border-t-primary shadow-md relative scrollbar-thin">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
+        <div className="relative z-10">
+          {messages.map((m, i) => <Bubble key={i} msg={m} />)}
+          {loading && (
+            <div className="flex gap-4 mb-6 justify-start animate-fade-in-up">
+              <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 text-primary animate-pulse" />
+              </div>
+              <div className="bg-surface border border-borderHighlight p-5 rounded-2xl rounded-tl-sm flex items-center gap-2 shadow-sm">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="ml-3 text-xs font-mono text-primary uppercase tracking-widest">Querying Neural Core...</span>
+              </div>
             </div>
-            <div className="enterprise-card p-4 flex items-center gap-1">
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
+          )}
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-3 relative">
         <input
-          className="flex-1 enterprise-card px-4 py-3 text-sm text-textMain focus:border-primary outline-none"
+          className="flex-1 enterprise-card bg-surface px-6 py-4 text-sm text-textMain border border-borderHighlight focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all rounded-xl relative z-10 font-mono placeholder-textMuted/50 shadow-sm"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder="Ask a forensic question about your files... (Enter to send)"
+          placeholder="Input forensic query parameter... (Enter to transmit)"
           disabled={loading}
         />
         <button
           onClick={() => sendMessage()}
           disabled={loading || !input.trim()}
-          className="bg-primary hover:bg-[#0042a3] text-white px-6 rounded font-semibold disabled:opacity-50 transition-colors flex items-center justify-center"
+          className="bg-primary hover:bg-primary/90 text-white px-8 rounded-xl font-bold disabled:opacity-50 transition-all flex items-center justify-center relative z-10 shadow-sm hover:scale-105 active:scale-95 duration-200"
         >
           <Send className="w-5 h-5" />
         </button>

@@ -7,32 +7,44 @@ import {
 } from 'recharts';
 import { Activity, AlertTriangle, FileBox, ShieldAlert } from 'lucide-react';
 
-const COLORS = ['#d12223', '#d97706', '#0052cc'];
+const COLORS = ['#DC2626', '#D97706', '#0284C7'];
 
 function KPICard({ label, value, sub, critical, icon: Icon, iconColor }) {
   return (
-    <div className="enterprise-card p-5 relative overflow-hidden flex flex-col gap-2">
-      {critical && <div className="absolute top-0 left-0 right-0 h-1 bg-critical" />}
+    <div className={`enterprise-card p-6 relative overflow-hidden flex flex-col gap-3 group hover:-translate-y-1 transition-all duration-300 bg-surface border border-borderHighlight shadow-sm ${critical ? 'border-t-4 border-t-critical' : 'hover:shadow-md'}`}>
+      {critical && (
+        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-critical/10 blur-[30px] rounded-full"></div>
+      )}
+      {!critical && (
+        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-primary/5 blur-[30px] rounded-full group-hover:bg-primary/10 transition-colors"></div>
+      )}
       
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-textMuted uppercase tracking-wider">{label}</span>
-        {Icon && <Icon className="w-5 h-5" color={iconColor || '#64748b'} />}
+      <div className="flex items-center justify-between relative z-10">
+        <span className="text-[10px] font-bold text-textMuted uppercase tracking-widest">{label}</span>
+        {Icon && (
+          <div className={`p-2 rounded-lg ${critical ? 'bg-critical/10' : 'bg-surfaceHighlight'}`}>
+            <Icon className="w-5 h-5" color={iconColor || '#94a3b8'} />
+          </div>
+        )}
       </div>
       
-      <span className={`text-3xl font-bold font-mono leading-none ${critical && value > 0 ? 'text-critical' : 'text-textMain'}`}>
+      <span className={`text-4xl font-bold font-mono tracking-tight relative z-10 ${critical && value > 0 ? 'text-critical' : 'text-textMain'}`}>
         {value ?? '--'}
       </span>
       
-      {sub && <span className="text-xs text-textMuted">{sub}</span>}
+      {sub && <span className="text-xs text-textMuted font-medium relative z-10">{sub}</span>}
     </div>
   );
 }
 
 function Section({ title, children, className }) {
   return (
-    <div className={`enterprise-card p-5 flex flex-col ${className}`}>
-      <h3 className="text-sm font-bold text-textMain mb-4">{title}</h3>
-      <div className="flex-1 min-h-0">
+    <div className={`enterprise-card p-6 flex flex-col bg-surface border border-borderHighlight shadow-sm ${className}`}>
+      <h3 className="text-sm font-bold text-textMain tracking-widest uppercase mb-6 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+        {title}
+      </h3>
+      <div className="flex-1 min-h-0 relative z-10">
         {children}
       </div>
     </div>
@@ -69,22 +81,32 @@ export function Overview() {
     { name: 'Info',     value: stats.INFO      },
   ] : [];
 
-  const TP = { contentStyle: { background: '#ffffff', border: '1px solid #e2e8f0', fontSize: 12, borderRadius: 4, color: '#0f172a' } };
+  const TP = { 
+    contentStyle: { 
+      background: '#FFFFFF', 
+      border: '1px solid #E6EBE9', 
+      fontSize: 12, 
+      borderRadius: 8, 
+      color: '#101816',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+    },
+    itemStyle: { color: '#667370', fontWeight: 600 }
+  };
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="flex flex-col gap-8 h-full animate-fade-in-up">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-textMain tracking-tight">System Overview</h2>
-        <p className="text-sm text-textMuted mt-1">Real-time integrity monitoring status and alerts</p>
+        <h2 className="text-3xl font-bold text-textMain tracking-tight">System Overview</h2>
+        <p className="text-sm text-textMuted mt-2">Real-time kernel integrity monitoring status and threat analytics.</p>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard label="Events (24 h)"    value={stats?.total_24h} icon={Activity} iconColor="#0052cc" />
-        <KPICard label="Critical Alerts"  value={stats?.CRITICAL}  critical icon={ShieldAlert} iconColor="#d12223" />
-        <KPICard label="Files Monitored"  value={files}            sub="Active baseline" icon={FileBox} />
-        <KPICard label="Warnings"         value={stats?.WARNING}   sub="Needs review" icon={AlertTriangle} iconColor="#d97706" />
+        <KPICard label="Events (24 h)"    value={stats?.total_24h} icon={Activity}      iconColor="#14B891" />
+        <KPICard label="Critical Alerts"  value={stats?.CRITICAL}  critical icon={ShieldAlert} iconColor="#DC2626" />
+        <KPICard label="Files Monitored"  value={files}            sub="Active kernel baseline" icon={FileBox}      iconColor="#14B891" />
+        <KPICard label="Warnings"         value={stats?.WARNING}   sub="Pending review" icon={AlertTriangle} iconColor="#D97706" />
       </div>
 
       {/* Charts Row */}
@@ -95,43 +117,43 @@ export function Overview() {
             <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="gCrit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#d12223" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#d12223" stopOpacity={0}/>
+                  <stop offset="5%"  stopColor="#DC2626" stopOpacity={0.25}/>
+                  <stop offset="95%" stopColor="#DC2626" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="gWarn" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#d97706" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
+                  <stop offset="5%"  stopColor="#D97706" stopOpacity={0.25}/>
+                  <stop offset="95%" stopColor="#D97706" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="gInfo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#0052cc" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#0052cc" stopOpacity={0}/>
+                  <stop offset="5%"  stopColor="#14B891" stopOpacity={0.25}/>
+                  <stop offset="95%" stopColor="#14B891" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E6EBE9" vertical={false} />
+              <XAxis dataKey="time" stroke="#9FB3AE" tick={{ fontSize: 11, fill: '#667370' }} tickLine={false} axisLine={false} />
+              <YAxis stroke="#9FB3AE" tick={{ fontSize: 11, fill: '#667370' }} tickLine={false} axisLine={false} />
               <Tooltip {...TP} />
-              <Area type="monotone" dataKey="CRITICAL" stroke="#d12223" fill="url(#gCrit)" strokeWidth={2} />
-              <Area type="monotone" dataKey="WARNING"  stroke="#d97706" fill="url(#gWarn)" strokeWidth={2} />
-              <Area type="monotone" dataKey="INFO"     stroke="#0052cc" fill="url(#gInfo)" strokeWidth={2} />
+              <Area type="monotone" dataKey="CRITICAL" stroke="#DC2626" fill="url(#gCrit)" strokeWidth={2} activeDot={{ r: 5, fill: '#DC2626', stroke: '#fff', strokeWidth: 2 }} />
+              <Area type="monotone" dataKey="WARNING"  stroke="#D97706" fill="url(#gWarn)" strokeWidth={2} />
+              <Area type="monotone" dataKey="INFO"     stroke="#14B891" fill="url(#gInfo)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </Section>
 
         {/* Pie chart – severity breakdown */}
-        <Section title="Severity Mix">
+        <Section title="Severity Distribution">
           {pieData.every(d => d.value === 0) ? (
             <div className="flex h-full items-center justify-center">
-              <p className="text-textMuted text-sm">No data yet</p>
+              <p className="text-textMuted text-sm font-mono">No telemetry data</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} dataKey="value" stroke="none" paddingAngle={2}>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={65} outerRadius={90} dataKey="value" stroke="#ffffff" strokeWidth={3} paddingAngle={5}>
                   {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
                 </Pie>
                 <Tooltip {...TP} />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12, color: '#475569' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 12, color: '#64748b', paddingTop: '20px' }} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -140,11 +162,12 @@ export function Overview() {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[300px]">
-        <Section title="Live Feed">
+        <Section title="Live Event Stream">
           <LiveFeed />
         </Section>
         <Section title="Threat Map (Simulation)">
-          <div className="h-full min-h-[250px]">
+          <div className="h-full min-h-[250px] rounded-lg overflow-hidden border border-borderHighlight relative">
+            <div className="absolute inset-0 bg-primary/5 pointer-events-none z-10 mix-blend-screen"></div>
             <ThreatMap />
           </div>
         </Section>
