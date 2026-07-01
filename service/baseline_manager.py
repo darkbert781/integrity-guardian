@@ -12,10 +12,11 @@ from config_manager import ConfigManager
 logger = logging.getLogger(__name__)
 
 class BaselineManager:
-    def __init__(self, db_manager: DatabaseManager, config_manager: ConfigManager, alert_manager = None):
+    def __init__(self, db_manager: DatabaseManager, config_manager: ConfigManager, alert_manager=None, rollback_engine=None):
         self.db = db_manager
         self.config = config_manager
         self.alert_manager = alert_manager
+        self.rollback_engine = rollback_engine
         
     def _get_monitored_paths(self) -> List[Dict[str, Any]]:
         return self.config.get("monitored_paths", [])
@@ -112,7 +113,7 @@ class BaselineManager:
                 )
                 logger.debug(f"Updated baseline for {file_path}")
         else:
-            # Insert new
+            # Insert new baseline
             self.db.execute(
                 """INSERT INTO baselines 
                    (file_path, current_hash, tier) 
@@ -120,6 +121,21 @@ class BaselineManager:
                 (file_path, sha256, tier)
             )
             logger.debug(f"Added {file_path} to baseline")
+            
+            # For critical-tier files, take an initial encrypted vault snapshot
+            if tier == 'critical' and not is_dir and self.rollback_engine:
+                vault_path = self.rollback_engine.store_version(file_path, sha256)
+                if vault_path:
+                    new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
+                    if new_row:
+                        self.db.execute(
+                            """INSERT INTO hash_history 
+                               (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
+                               VALUES (?, ?, ?, ?, 'INITIAL_SNAPSHOT', ?, 1)""",
+                            (new_row[0]['id'], None, sha256, now, vault_path)
+                        )
+                        logger.info(f"Vault snapshot created for critical file: {file_path}")
+
 
     def handle_event(self, event: Dict[str, Any]):
         """
@@ -195,9 +211,19 @@ class BaselineManager:
                 )
             
             if old_hash != new_hash and event['operation'] != 'DELETED':
+                # For critical-tier files, snapshot the CURRENT (pre-change) version for rollback
+                vault_path = None
+                if tier == 'critical' and self.rollback_engine and old_hash:
+                    vault_path = self.rollback_engine.store_version(event['file_path'], old_hash)
+                    if vault_path:
+                        logger.info(f"Vault snapshot taken before change: {event['file_path']}")
+
                 self.db.execute(
-                    "INSERT INTO hash_history (file_id, old_hash, new_hash, changed_at, change_type) VALUES (?, ?, ?, ?, ?)",
-                    (file_id, old_hash, new_hash, now, event['operation'])
+                    """INSERT INTO hash_history 
+                       (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (file_id, old_hash, new_hash, now, event['operation'],
+                     vault_path, 1 if vault_path else 0)
                 )
                 
             if self.alert_manager:

@@ -11,10 +11,11 @@ export function Vault() {
   const fetchVault = () => {
     setLoading(true);
     api.get('/rollback/vault')
-      .then(r => setVaultFiles(r.data.data || []))
+      .then(r => setVaultFiles(r.data.vault_entries || r.data.data || []))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   };
+
 
   useEffect(() => {
     fetchVault();

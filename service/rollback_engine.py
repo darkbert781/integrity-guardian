@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from cryptography.fernet import Fernet
 import logging
@@ -6,6 +7,8 @@ import base64
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+MAX_VERSIONS_PER_FILE = 5  # Maximum vault snapshots to keep per file
 
 class RollbackEngine:
     def __init__(self, db_manager, vault_path: str, encryption_key: str):
@@ -19,14 +22,13 @@ class RollbackEngine:
         self.fernet = Fernet(base64.urlsafe_b64encode(key_bytes))
         
         os.makedirs(self.vault_path, exist_ok=True)
-        
+
     def store_version(self, file_path: str, sha256_hash: str) -> Optional[str]:
-        """Copies file to vault and encrypts it."""
-        if not os.path.exists(file_path):
+        """Encrypt and copy the file into the vault. Returns the vault path or None."""
+        if not os.path.exists(file_path) or os.path.isdir(file_path):
             return None
             
         try:
-            import time
             vault_file_name = f"{sha256_hash}_{int(time.time())}.igv"
             vault_file_path = os.path.join(self.vault_path, vault_file_name)
             
@@ -37,14 +39,19 @@ class RollbackEngine:
             
             with open(vault_file_path, 'wb') as f:
                 f.write(encrypted_data)
-                
+
+            logger.info(f"Vault snapshot stored: {vault_file_path}")
+
+            # Prune old snapshots for this file to keep the vault lean
+            self._prune_old_versions(file_path)
+
             return vault_file_path
         except Exception as e:
             logger.error(f"Failed to store version for {file_path}: {e}")
             return None
 
     def rollback_file(self, vault_entry_path: str, original_path: str) -> bool:
-        """Decrypts and restores a file from the vault."""
+        """Decrypt and restore a file from the vault to its original path."""
         if not os.path.exists(vault_entry_path):
             logger.error(f"Vault entry not found: {vault_entry_path}")
             return False
@@ -54,6 +61,9 @@ class RollbackEngine:
                 encrypted_data = f.read()
                 
             decrypted_data = self.fernet.decrypt(encrypted_data)
+
+            # Ensure parent directory exists
+            os.makedirs(os.path.dirname(original_path), exist_ok=True)
             
             with open(original_path, 'wb') as f:
                 f.write(decrypted_data)
@@ -63,3 +73,31 @@ class RollbackEngine:
         except Exception as e:
             logger.error(f"Rollback failed for {original_path}: {e}")
             return False
+
+    def _prune_old_versions(self, file_path: str):
+        """Remove oldest vault snapshots for a file if over the version limit."""
+        try:
+            rows = self.db.query(
+                """SELECT hist_id, vault_entry_path 
+                   FROM hash_history 
+                   WHERE file_id = (SELECT id FROM baselines WHERE file_path = ?)
+                   AND rollback_available = 1
+                   ORDER BY changed_at ASC""",
+                (file_path,)
+            )
+            if len(rows) > MAX_VERSIONS_PER_FILE:
+                to_prune = rows[:len(rows) - MAX_VERSIONS_PER_FILE]
+                for row in to_prune:
+                    vp = row['vault_entry_path']
+                    if vp and os.path.exists(vp):
+                        try:
+                            os.remove(vp)
+                            logger.info(f"Pruned old vault snapshot: {vp}")
+                        except OSError as e:
+                            logger.warning(f"Could not delete vault file {vp}: {e}")
+                    self.db.execute(
+                        "UPDATE hash_history SET rollback_available=0, vault_entry_path=NULL WHERE hist_id=?",
+                        (row['hist_id'],)
+                    )
+        except Exception as e:
+            logger.warning(f"Vault pruning failed for {file_path}: {e}")

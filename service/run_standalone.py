@@ -38,12 +38,22 @@ def run_standalone():
     
     db_path = config_manager.get("db_path", "integrity.db")
     db_manager = DatabaseManager(db_path, use_encryption=False)
-    
+
+    vault_path = config_manager.get("vault_path", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vault"))
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography", 0, winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as key:
+            machine_guid, _ = winreg.QueryValueEx(key, "MachineGuid")
+    except Exception:
+        machine_guid = "DEFAULT-MACHINE-GUID"
+
+    rollback_engine = RollbackEngine(db_manager, vault_path, machine_guid)
     alert_manager = AlertManager(config_manager)
-    baseline_manager = BaselineManager(db_manager, config_manager, alert_manager)
-    
+    baseline_manager = BaselineManager(db_manager, config_manager, alert_manager, rollback_engine)
+
     logger.info("Starting standalone background service...")
     baseline_manager.rebuild_baseline()
+
     
     def handle_event(event):
         baseline_manager.handle_event(event)
