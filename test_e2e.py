@@ -17,7 +17,7 @@ import requests
 import hashlib
 from pathlib import Path
 
-BASE_DIR = r"C:\Users\Alinaswe simfukwe\Desktop\integrity_guardian"
+BASE_DIR = r"C:\Users\Alinaswe\Desktop\integrity_guardian"
 DB_PATH = os.path.join(BASE_DIR, "integrity.db")
 TEST_DIR = os.path.join(BASE_DIR, "test_sandbox")
 SCHEMA_PATH = os.path.join(BASE_DIR, "service", "db", "schema.sql")

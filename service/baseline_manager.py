@@ -12,9 +12,10 @@ from config_manager import ConfigManager
 logger = logging.getLogger(__name__)
 
 class BaselineManager:
-    def __init__(self, db_manager: DatabaseManager, config_manager: ConfigManager):
+    def __init__(self, db_manager: DatabaseManager, config_manager: ConfigManager, alert_manager = None):
         self.db = db_manager
         self.config = config_manager
+        self.alert_manager = alert_manager
         
     def _get_monitored_paths(self) -> List[Dict[str, Any]]:
         return self.config.get("monitored_paths", [])
@@ -52,9 +53,12 @@ class BaselineManager:
                 self._add_or_update_file(full_path, tier)
 
     def _add_or_update_file(self, file_path: str, tier: str):
-        sha256, blake3 = HashEngine.hash_file(file_path)
-        if not sha256:
-            return
+        is_dir = os.path.isdir(file_path)
+        sha256 = "dir"
+        if not is_dir:
+            sha256, blake3 = HashEngine.hash_file(file_path)
+            if not sha256:
+                return
             
         try:
             size = os.path.getsize(file_path)
@@ -103,7 +107,11 @@ class BaselineManager:
                 self._dispatch_incident(existing[0]['id'], existing[0]['current_hash'], None, event)
             return
             
-        new_sha256, new_blake3 = HashEngine.hash_file(file_path)
+        if os.path.isdir(file_path):
+            new_sha256 = "dir"
+            new_blake3 = None
+        else:
+            new_sha256, new_blake3 = HashEngine.hash_file(file_path)
         
         if operation in ('CREATED', 'MODIFIED', 'RENAMED'):
             if existing:
@@ -147,5 +155,17 @@ class BaselineManager:
                     "INSERT INTO hash_history (file_id, old_hash, new_hash, changed_at, change_type) VALUES (?, ?, ?, ?, ?)",
                     (file_id, old_hash, new_hash, now, event['operation'])
                 )
+                
+            if self.alert_manager:
+                incident = {
+                    'file_path': event['file_path'],
+                    'event_type': event['operation'],
+                    'severity': severity,
+                    'process_id': event.get('process_id'),
+                    'process_name': event.get('process_name'),
+                    'hash_old': old_hash,
+                    'hash_new': new_hash
+                }
+                self.alert_manager.dispatch(incident)
         except Exception as e:
             logger.error(f"Failed to log incident: {e}")

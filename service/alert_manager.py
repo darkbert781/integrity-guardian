@@ -31,16 +31,61 @@ class AlertManager:
         
         resend.api_key = api_key
         
+        import socket
+        hostname = socket.gethostname()
+        
         severity = incident.get('severity', 'INFO')
         file_path = incident.get('file_path', 'Unknown file')
         event_type = incident.get('event_type', 'MODIFIED')
+        process_name = incident.get('process_name', 'Unknown')
+        hash_old = incident.get('hash_old', 'N/A')
+        hash_new = incident.get('hash_new', 'N/A')
+        
+        color = "#ff4444" if severity == 'CRITICAL' else "#ffbb33" if severity == 'WARNING' else "#33b5e5"
         
         html_content = f"""
-        <h2>Integrity Guardian Alert</h2>
-        <p><strong>Severity:</strong> <span style="color:red;">{severity}</span></p>
-        <p><strong>Action:</strong> {event_type}</p>
-        <p><strong>File:</strong> {file_path}</p>
-        <p>Please review the dashboard for more forensic details.</p>
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
+                    <h2 style="color: #ffffff; margin: 0; font-size: 24px;">🛡️ Integrity Guardian Alert</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <h3 style="color: {color}; text-transform: uppercase; margin-top: 0;">{severity} NOTIFICATION</h3>
+                    <p style="color: #555555; line-height: 1.5;">An automated file integrity event has been detected on your monitored systems.</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold; width: 30%;">Hostname:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee;">{hostname}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold;">Action:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee;"><strong>{event_type}</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold;">File Path:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; word-break: break-all;"><code>{file_path}</code></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold;">Process:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee;">{process_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold;">Old SHA-256:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-size: 12px; font-family: monospace;">{hash_old}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-weight: bold;">New SHA-256:</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; font-size: 12px; font-family: monospace;">{hash_new}</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top: 30px; text-align: center;">
+                        <a href="http://localhost:5173" style="background-color: #1a1a1a; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Details in Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
         """
         
         try:

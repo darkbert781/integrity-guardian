@@ -42,7 +42,7 @@
   ],
   "alert_channels": {
     "email": {
-      "enabled": false,
+      "enabled": true,
       "smtp_host": "",
       "smtp_port": 587,
       "from": "",
@@ -90,9 +90,9 @@
       "standard_file_renamed"
     ]
   },
-  "vault_path": "C:\\Users\\Alinaswe simfukwe\\Desktop\\integrity_guardian\\vault",
+  "vault_path": "C:\\Users\\Alinaswe\\Desktop\\integrity_guardian\\vault",
   "db_path": "integrity.db",
   "log_retention_days": 365,
   "dashboard_port": 7890,
-  "hmac_signature": "a381b153a9e51a02c14586a7802f622cf4a63fd8ed70990ae6c58dee910531a2"
+  "hmac_signature": "5179eeedf59f5c15c6ff4224295b49ead518a381fa5d7f2823d6f6d248cd7989"
 }

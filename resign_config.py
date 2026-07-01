@@ -5,7 +5,7 @@ import hmac
 import hashlib
 import winreg
 
-CONFIG_PATH = r"C:\Users\Alinaswe simfukwe\Desktop\integrity_guardian\config\ig-config.json"
+CONFIG_PATH = r"C:\Users\Alinaswe\Desktop\integrity_guardian\config\ig-config.json"
 
 def get_machine_guid():
     try:

@@ -39,7 +39,8 @@ def run_standalone():
     db_path = config_manager.get("db_path", "integrity.db")
     db_manager = DatabaseManager(db_path, use_encryption=False)
     
-    baseline_manager = BaselineManager(db_manager, config_manager)
+    alert_manager = AlertManager(config_manager)
+    baseline_manager = BaselineManager(db_manager, config_manager, alert_manager)
     
     logger.info("Starting standalone background service...")
     baseline_manager.rebuild_baseline()

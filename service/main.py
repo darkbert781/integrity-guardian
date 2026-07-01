@@ -50,7 +50,8 @@ class IntegrityGuardianService(win32serviceutil.ServiceFramework):
         schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db", "schema.sql")
         self.db_manager.init_schema(schema_path)
         
-        self.baseline_manager = BaselineManager(self.db_manager, self.config_manager)
+        self.alert_manager = AlertManager(self.config_manager)
+        self.baseline_manager = BaselineManager(self.db_manager, self.config_manager, self.alert_manager)
         
         self.threads = []
 
