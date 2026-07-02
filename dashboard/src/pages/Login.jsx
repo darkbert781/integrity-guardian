@@ -25,7 +25,7 @@ export function Login({ onLogin }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F4F7F6] font-sans relative overflow-hidden">
       
-      <div className="bg-[#FFFFFF] p-10 rounded-2xl shadow-xl w-[420px] border border-[#E6EBE9] relative z-10 animate-fade-in-up">
+      <div className="bg-[#FDFCFA] p-10 rounded-2xl shadow-xl w-[420px] border border-[#E6EBE9] relative z-10 animate-fade-in-up">
         
         <div className="flex flex-col items-center mb-10">
           <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 bg-[#E5F7F1] border border-[#CDEBE0] overflow-hidden relative group">
@@ -45,7 +45,7 @@ export function Login({ onLogin }) {
           <div>
             <label className="block text-sm font-medium text-[#667370] mb-2">Username</label>
             <input 
-              className="w-full p-3.5 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FFFFFF] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2]" 
+              className="w-full p-3.5 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FDFCFA] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2]" 
               placeholder="admin" 
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -55,10 +55,9 @@ export function Login({ onLogin }) {
           <div className="mb-2">
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-[#667370]">Password</label>
-              <a href="#" className="text-sm font-medium text-[#0E7C66] hover:underline">Forgot?</a>
             </div>
             <input 
-              className="w-full p-3.5 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FFFFFF] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2]" 
+              className="w-full p-3.5 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FDFCFA] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2]" 
               type="password" 
               placeholder="••••••••" 
               value={password}
@@ -67,10 +66,7 @@ export function Login({ onLogin }) {
             />
           </div>
 
-          <div className="flex items-center mb-2">
-            <input type="checkbox" id="remember" className="w-4 h-4 text-[#14B891] bg-[#F7F9F8] border-[#DCE4E1] rounded focus:ring-[#14B891]" />
-            <label htmlFor="remember" className="ml-2 text-sm text-[#667370]">Remember this device</label>
-          </div>
+
 
           <button 
             onClick={handleLogin}
