@@ -130,7 +130,7 @@ export function FileRegistry() {
             className="flex items-center gap-2 bg-critical/10 border border-critical/30 px-5 py-2.5 rounded-lg text-sm font-bold text-critical hover:bg-critical hover:text-white transition-all duration-300 shadow-sm"
           >
             <Trash2 className="w-4 h-4" />
-            PURGE ALL
+            Delete All
           </button>
           <button
             onClick={fetchFiles}

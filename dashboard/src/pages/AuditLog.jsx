@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
-import { Search, Clock, FileText, Database } from 'lucide-react';
+import { Search, Clock, FileText, Database, Download } from 'lucide-react';
 
 function fmtDate(ts) {
   if (!ts) return '—';
@@ -27,6 +27,29 @@ export function AuditLog() {
              || e.event_type?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleExport = () => {
+    const csvRows = [];
+    csvRows.push(['Timestamp', 'Event Type', 'File Path', 'Process Name', 'PID'].join(','));
+    for (const e of filtered) {
+      csvRows.push([
+        e.timestamp || '',
+        e.event_type || '',
+        `"${(e.file_path || '').replace(/"/g, '""')}"`,
+        e.process_name || '',
+        e.pid || ''
+      ].join(','));
+    }
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'audit_logs.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="flex flex-col h-full gap-8 max-w-6xl mx-auto w-full animate-fade-in-up">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -34,14 +57,23 @@ export function AuditLog() {
           <h2 className="text-3xl font-bold text-textMain tracking-tight">Audit Log</h2>
           <p className="text-sm text-textMuted mt-2">Complete chronological system event ledger.</p>
         </div>
-        <div className="flex items-center gap-3 bg-surface border border-borderHighlight rounded-lg px-4 py-2.5 w-80 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-          <Search className="w-4 h-4 text-primary" />
-          <input
-            className="bg-transparent border-none outline-none text-sm w-full text-textMain placeholder-textMuted/50 font-mono"
-            placeholder="Filter by path or event..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-surface border border-borderHighlight rounded-lg px-4 py-2.5 w-80 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+            <Search className="w-4 h-4 text-primary" />
+            <input
+              className="bg-transparent border-none outline-none text-sm w-full text-textMain placeholder-textMuted/50 font-mono"
+              placeholder="Filter by path or event..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 bg-primary/10 border border-primary/30 px-4 py-2.5 rounded-lg text-sm font-bold text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
         </div>
       </div>
 

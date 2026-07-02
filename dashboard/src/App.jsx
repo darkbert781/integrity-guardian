@@ -60,16 +60,7 @@ function DashboardLayout({ onLogout }) {
       {/* ── Sidebar ───────────────────────────────────────────────── */}
       <aside className="w-64 bg-sidebar flex-shrink-0 flex flex-col z-20 border-r border-white/5">
 
-        {/* Logo bar */}
-        <div className="h-[72px] flex items-center gap-3 px-5 border-b border-white/10">
-          <div className="p-2 bg-primary/20 rounded-xl">
-            <Shield className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-sm tracking-wide leading-tight">Integrity</p>
-            <p className="text-primary text-xs font-semibold tracking-widest uppercase">Guardian</p>
-          </div>
-        </div>
+        {/* Logo bar removed as requested */}
 
         {/* Nav links */}
         <div className="flex-1 overflow-y-auto px-3 py-5">
