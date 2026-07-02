@@ -84,8 +84,32 @@ def run_standalone():
             logger.error(f"Failed to start thread {t}: {e}")
         
     try:
+        last_hmac = config_manager.get('hmac_signature')
         while True:
-            time.sleep(1)
+            time.sleep(5)
+            try:
+                import json
+                with open(config_manager.config_path, 'r', encoding='utf-8') as f:
+                    disk_data = json.load(f)
+                    disk_hmac = disk_data.get('hmac_signature')
+                    if disk_hmac and disk_hmac != last_hmac:
+                        logger.info("Config change detected, hot-reloading...")
+                        config_manager.load_config()
+                        last_hmac = config_manager.get('hmac_signature')
+                        
+                        # Hot-swap vault path on running engine
+                        new_vault = config_manager.get("vault_path")
+                        if new_vault and new_vault != rollback_engine.vault_path:
+                            import base64
+                            from cryptography.fernet import Fernet
+                            os.makedirs(new_vault, exist_ok=True)
+                            os.makedirs(os.path.join(new_vault, "mirror"), exist_ok=True)
+                            rollback_engine.vault_path = new_vault
+                            key_bytes = machine_guid[:32].encode('utf-8')
+                            rollback_engine.fernet = Fernet(base64.urlsafe_b64encode(key_bytes))
+                            logger.info(f"Hot-swapped vault path to: {new_vault}")
+            except Exception as e:
+                pass
     except KeyboardInterrupt:
         logger.info("Stopping standalone service...")
         for t in threads:
