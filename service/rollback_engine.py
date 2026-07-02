@@ -27,6 +27,11 @@ class RollbackEngine:
         """Encrypt and copy the file into the vault as a snapshot. Returns the vault path or None."""
         if not os.path.exists(file_path) or os.path.isdir(file_path):
             return None
+        # Don't snapshot empty files — e3b0c44... is SHA-256 of zero bytes
+        EMPTY_HASH = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+        if sha256_hash == EMPTY_HASH or os.path.getsize(file_path) == 0:
+            logger.debug(f"Skipping vault snapshot for empty file: {file_path}")
+            return None
             
         try:
             vault_file_name = f"{sha256_hash}_{int(time.time())}.igv"
@@ -54,13 +59,13 @@ class RollbackEngine:
             return None
 
     def mirror_file(self, file_path: str):
-        """Copy the actual file into vault/mirror/ preserving its directory structure."""
+        """Copy the actual file into vault/mirror/ without preserving directory structure."""
         try:
             if not os.path.exists(file_path) or os.path.isdir(file_path):
                 return
-            # Strip drive letter and leading separator to create relative path
-            rel = os.path.splitdrive(file_path)[1].lstrip(os.sep)
-            mirror_dest = os.path.join(self.vault_path, "mirror", rel)
+            # Save just the file name directly in mirror directory
+            filename = os.path.basename(file_path)
+            mirror_dest = os.path.join(self.vault_path, "mirror", filename)
             os.makedirs(os.path.dirname(mirror_dest), exist_ok=True)
             import shutil as _shutil
             _shutil.copy2(file_path, mirror_dest)
@@ -71,8 +76,8 @@ class RollbackEngine:
     def delete_mirror(self, file_path: str):
         """Remove the mirrored file from vault/mirror/ when it is deleted from source."""
         try:
-            rel = os.path.splitdrive(file_path)[1].lstrip(os.sep)
-            mirror_dest = os.path.join(self.vault_path, "mirror", rel)
+            filename = os.path.basename(file_path)
+            mirror_dest = os.path.join(self.vault_path, "mirror", filename)
             if os.path.exists(mirror_dest):
                 os.remove(mirror_dest)
                 logger.info(f"Removed mirror file from vault: {mirror_dest}")
@@ -97,6 +102,9 @@ class RollbackEngine:
             with open(original_path, 'wb') as f:
                 f.write(decrypted_data)
                 
+            # Update the mirror in the vault to reflect the restored file
+            self.mirror_file(original_path)
+            
             logger.info(f"Successfully rolled back {original_path}")
             return True
         except Exception as e:
