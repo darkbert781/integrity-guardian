@@ -3,9 +3,7 @@
   "less.validate": false,
   "scss.validate": false,
   "css.customData": [],
-  "[css]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
+
   "tailwindCSS.includeLanguages": {
     "javascript": "javascript",
     "jsx": "javascript"
