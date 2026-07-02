@@ -72,10 +72,16 @@ class BaselineManager:
                 self._add_or_update_file(full_path, tier)
     def _is_internal_file(self, file_path: str) -> bool:
         base = os.path.basename(file_path)
+        
+        # Skip internal database/log files
         if base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm', 'ig_service.log', 'log.txt'):
             return True
         
-        # Ignore noisy developer/system directories
+        # Skip Office lock/temp files (~$file.docx, ~WRD0000.tmp, ~WRL0001.tmp, *.tmp)
+        if base.startswith('~') or base.endswith('.tmp') or base.endswith('.TMP'):
+            return True
+        
+        # Skip Ignore noisy developer/system directories
         parts = file_path.split(os.sep)
         if any(ignored in parts for ignored in ('.git', 'node_modules', '.venv', '__pycache__', 'venv_packages', '.pytest_cache')):
             return True
@@ -181,6 +187,18 @@ class BaselineManager:
                 new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
                 if new_row:
                     self._dispatch_incident(new_row[0]['id'], None, new_sha256, event)
+                    # Immediately vault-snapshot the new file if it's in a critical path
+                    if tier == 'critical' and self.rollback_engine and new_sha256 and not os.path.isdir(file_path):
+                        now = datetime.now().isoformat()
+                        vault_path = self.rollback_engine.store_version(file_path, new_sha256)
+                        if vault_path:
+                            logger.info(f"Vault snapshot created for new critical file: {file_path}")
+                            self.db.execute(
+                                """INSERT INTO hash_history 
+                                   (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
+                                   VALUES (?, ?, ?, ?, 'INITIAL_SNAPSHOT', ?, 1)""",
+                                (new_row[0]['id'], None, new_sha256, now, vault_path)
+                            )
 
     def _dispatch_incident(self, file_id: int, old_hash: Optional[str], new_hash: Optional[str], event: Dict[str, Any]):
         now = datetime.now().isoformat()
