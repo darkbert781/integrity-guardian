@@ -252,7 +252,12 @@ class BaselineManager:
                 self._add_or_update_file(file_path, tier)
                 new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
                 if new_row:
-                    self._dispatch_incident(new_row[0]['id'], None, new_sha256, event)
+                    # If it wasn't in the baseline, it's a creation from our perspective, 
+                    # even if watchdog passed it as a rename-mapped MODIFIED event
+                    event_copy = event.copy()
+                    event_copy['operation'] = 'CREATED'
+                    self._dispatch_incident(new_row[0]['id'], None, new_sha256, event_copy)
+                    
                     # Mirror the new file into vault for ALL tiers
                     if self.rollback_engine and not os.path.isdir(file_path):
                         self.rollback_engine.mirror_file(file_path)
