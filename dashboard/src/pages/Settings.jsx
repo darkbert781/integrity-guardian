@@ -93,7 +93,7 @@ export function Settings() {
           <div className="flex flex-col gap-8">
             <Section title="Environment Architecture">
               <Field label="Database Path" field="db_path" hint="Absolute path to the encrypted SQLCipher database" placeholder="C:\ProgramData\IntegrityGuardian\integrity.db" />
-              <Field label="Vault Directory" field="vault_dir" hint="Storage location for AES-256 encrypted file snapshots." placeholder="C:\ProgramData\IntegrityGuardian\Vault" />
+              <Field label="Vault Directory" field="vault_path" hint="Storage location for AES-256 encrypted file snapshots and mirror copies. Changes take effect immediately." placeholder="C:\Users\YourUser\Desktop\IG_Vault" />
               <div className="mb-2">
                 <label className="block text-xs font-bold text-textMuted uppercase tracking-widest mb-2">Log Verbosity</label>
                 <select

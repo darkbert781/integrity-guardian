@@ -1,6 +1,12 @@
 {
   "version": "2.0",
-  "monitored_paths": [],
+  "monitored_paths": [
+    {
+      "path": "C:\\Users\\Alinaswe\\Desktop\\IG_Monitor",
+      "tier": "critical",
+      "recursive": true
+    }
+  ],
   "registry_keys": [
     "HKLM\\SYSTEM\\CurrentControlSet\\Services",
     "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
@@ -64,9 +70,9 @@
       "standard_file_renamed"
     ]
   },
-  "vault_path": "C:\\Users\\Alinaswe\\Desktop\\integrity_guardian\\vault",
+  "vault_path": "C:\\Users\\Alinaswe\\Desktop\\IG_Vault",
   "db_path": "integrity.db",
   "log_retention_days": 365,
   "dashboard_port": 7890,
-  "hmac_signature": "24cb14d2f79796b25ace0ca57fff15b410de73bd719516c94348510fd4493ba1"
+  "hmac_signature": "34ead2746c61d031e1d13e0597b65cbcd625051a1a344f0a7d79d5e0c2a40c23"
 }

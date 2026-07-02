@@ -22,6 +22,7 @@ class RollbackEngine:
         self.fernet = Fernet(base64.urlsafe_b64encode(key_bytes))
         
         os.makedirs(self.vault_path, exist_ok=True)
+        os.makedirs(os.path.join(self.vault_path, "mirror"), exist_ok=True)
 
     def store_version(self, file_path: str, sha256_hash: str) -> Optional[str]:
         """Encrypt and copy the file into the vault as a snapshot. Returns the vault path or None."""
