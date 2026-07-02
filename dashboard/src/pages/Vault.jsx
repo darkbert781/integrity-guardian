@@ -66,7 +66,7 @@ export function Vault() {
       try {
         const r = await api.get('/settings/');
         const currentConfig = r.data.config || {};
-        const updatedConfig = { ...currentConfig, vault_dir: newPath.trim() };
+        const updatedConfig = { ...currentConfig, vault_path: newPath.trim() };
         await api.put('/settings/', updatedConfig);
         setVaultPath(newPath.trim());
       } catch (err) {
