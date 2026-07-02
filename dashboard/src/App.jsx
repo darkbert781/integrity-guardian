@@ -7,7 +7,6 @@ import {
   FileBox,
   Lock,
   FileClock,
-  CheckCircle,
   BrainCircuit,
   Search,
   Settings as SettingsIcon,
@@ -20,21 +19,19 @@ import { Alerts }       from './pages/Alerts';
 import { FileRegistry } from './pages/FileRegistry';
 import { Vault }        from './pages/Vault';
 import { AuditLog }     from './pages/AuditLog';
-import { Compliance }   from './pages/Compliance';
 import { AIInsights }   from './pages/AIInsights';
 import { NLQuery }      from './pages/NLQuery';
 import { Settings }     from './pages/Settings';
 
 const NAV = [
-  { to: '/',           label: 'Overview',        icon: Shield },
-  { to: '/events',     label: 'Event Feed',      icon: Activity },
-  { to: '/alerts',     label: 'Alert Inbox',     icon: Bell },
-  { to: '/files',      label: 'Monitored Files', icon: FileBox },
-  { to: '/vault',      label: 'Encrypted Vault', icon: Lock },
-  { to: '/audit',      label: 'Audit Log',       icon: FileClock },
-  { to: '/compliance', label: 'Compliance',      icon: CheckCircle },
-  { to: '/ai',         label: 'AI Insights',     icon: BrainCircuit },
-  { to: '/query',      label: 'Forensic Query',  icon: Search },
+  { to: '/',       label: 'Overview',        icon: Shield },
+  { to: '/events', label: 'Event Feed',      icon: Activity },
+  { to: '/alerts', label: 'Alert Inbox',     icon: Bell },
+  { to: '/files',  label: 'Monitored Files', icon: FileBox },
+  { to: '/vault',  label: 'Encrypted Vault', icon: Lock },
+  { to: '/audit',  label: 'Audit Log',       icon: FileClock },
+  { to: '/ai',     label: 'AI Insights',     icon: BrainCircuit },
+  { to: '/query',  label: 'Forensic Query',  icon: Search },
 ];
 
 function SidebarLink({ to, label, icon: Icon, end }) {
@@ -127,16 +124,15 @@ function DashboardLayout({ onLogout }) {
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto h-full animate-fade-in-up">
             <Routes>
-              <Route path="/"           element={<Overview />} />
-              <Route path="/events"     element={<EventFeed />} />
-              <Route path="/alerts"     element={<Alerts />} />
-              <Route path="/files"      element={<FileRegistry />} />
-              <Route path="/vault"      element={<Vault />} />
-              <Route path="/audit"      element={<AuditLog />} />
-              <Route path="/compliance" element={<Compliance />} />
-              <Route path="/ai"         element={<AIInsights />} />
-              <Route path="/query"      element={<NLQuery />} />
-              <Route path="/settings"   element={<Settings />} />
+              <Route path="/"         element={<Overview />} />
+              <Route path="/events"   element={<EventFeed />} />
+              <Route path="/alerts"   element={<Alerts />} />
+              <Route path="/files"    element={<FileRegistry />} />
+              <Route path="/vault"    element={<Vault />} />
+              <Route path="/audit"    element={<AuditLog />} />
+              <Route path="/ai"       element={<AIInsights />} />
+              <Route path="/query"    element={<NLQuery />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </div>
         </main>

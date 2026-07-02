@@ -9,17 +9,28 @@ class QueryRequest(BaseModel):
 
 def get_gemini_client():
     """
-    Initialise the Gemini client, trying several model names in priority order.
-    This handles SDK version differences and API key tier availability.
+    Load Gemini client, reading the API key directly from .env to avoid
+    stale environment variable issues after server restarts.
     """
     try:
         import google.generativeai as genai
+        # Read key from .env file directly (always fresh)
         api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            # Try reading directly from .env as fallback
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("GEMINI_API_KEY="):
+                            api_key = line.split("=", 1)[1].strip()
+                            os.environ["GEMINI_API_KEY"] = api_key
+                            break
         if not api_key:
             return None
         genai.configure(api_key=api_key)
 
-        # Try models in order — newest/fastest first, oldest as final fallback
         candidate_models = [
             "gemini-2.0-flash",
             "gemini-2.0-flash-lite",
@@ -31,8 +42,6 @@ def get_gemini_client():
         for model_name in candidate_models:
             try:
                 model = genai.GenerativeModel(model_name)
-                # Quick probe — list models to confirm API key is valid
-                # (avoid a full generate call just to test)
                 return model
             except Exception:
                 continue

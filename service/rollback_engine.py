@@ -24,7 +24,7 @@ class RollbackEngine:
         os.makedirs(self.vault_path, exist_ok=True)
 
     def store_version(self, file_path: str, sha256_hash: str) -> Optional[str]:
-        """Encrypt and copy the file into the vault. Returns the vault path or None."""
+        """Encrypt and copy the file into the vault as a snapshot. Returns the vault path or None."""
         if not os.path.exists(file_path) or os.path.isdir(file_path):
             return None
             
@@ -42,6 +42,9 @@ class RollbackEngine:
 
             logger.info(f"Vault snapshot stored: {vault_file_path}")
 
+            # Also mirror the actual file into vault/mirror/ preserving directory structure
+            self.mirror_file(file_path)
+
             # Prune old snapshots for this file to keep the vault lean
             self._prune_old_versions(file_path)
 
@@ -49,6 +52,32 @@ class RollbackEngine:
         except Exception as e:
             logger.error(f"Failed to store version for {file_path}: {e}")
             return None
+
+    def mirror_file(self, file_path: str):
+        """Copy the actual file into vault/mirror/ preserving its directory structure."""
+        try:
+            if not os.path.exists(file_path) or os.path.isdir(file_path):
+                return
+            # Strip drive letter and leading separator to create relative path
+            rel = os.path.splitdrive(file_path)[1].lstrip(os.sep)
+            mirror_dest = os.path.join(self.vault_path, "mirror", rel)
+            os.makedirs(os.path.dirname(mirror_dest), exist_ok=True)
+            import shutil as _shutil
+            _shutil.copy2(file_path, mirror_dest)
+            logger.info(f"Mirrored file to vault: {mirror_dest}")
+        except Exception as e:
+            logger.warning(f"Failed to mirror file {file_path} to vault: {e}")
+
+    def delete_mirror(self, file_path: str):
+        """Remove the mirrored file from vault/mirror/ when it is deleted from source."""
+        try:
+            rel = os.path.splitdrive(file_path)[1].lstrip(os.sep)
+            mirror_dest = os.path.join(self.vault_path, "mirror", rel)
+            if os.path.exists(mirror_dest):
+                os.remove(mirror_dest)
+                logger.info(f"Removed mirror file from vault: {mirror_dest}")
+        except Exception as e:
+            logger.warning(f"Failed to remove mirror for {file_path}: {e}")
 
     def rollback_file(self, vault_entry_path: str, original_path: str) -> bool:
         """Decrypt and restore a file from the vault to its original path."""

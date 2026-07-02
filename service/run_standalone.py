@@ -5,6 +5,16 @@ import logging
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# ── Load .env before anything else so env vars are available ──────────────
+_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+if os.path.exists(_env_path):
+    with open(_env_path, "r") as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _key, _, _val = _line.partition("=")
+                os.environ[_key.strip()] = _val.strip()  # always override to pick up latest key
+
 # Inject local packages directory
 VENV = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv_packages")
 if VENV not in sys.path:

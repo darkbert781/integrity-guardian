@@ -22,21 +22,19 @@ class BaselineManager:
         return self.config.get("monitored_paths", [])
 
     def _get_covering_tier(self, file_path: str) -> Optional[str]:
-        """Check if file_path falls under a user-registered path and return its tier.
-        Reads from the baselines DB table (shared with the API process)
-        rather than the potentially stale in-memory config.
-        """
-        # Fetch all directory entries in baselines — these are the registered roots
-        registered_dirs = self.db.query(
-            "SELECT file_path, tier FROM baselines WHERE current_hash IN ('dir', 'MONITORED', 'PENDING')"
-        )
-        for row in registered_dirs:
+        """Return the tier of the registered parent directory for this file, or None."""
+        # Query ALL baselines entries (not just dirs) so we can find parent folder matches
+        all_baselines = self.db.query("SELECT file_path, tier FROM baselines")
+        best_match = None
+        best_len = -1
+        for row in all_baselines:
             reg = row['file_path']
-            if not os.path.isdir(reg):
-                continue
+            # Match if the registered path IS a directory ancestor of file_path
             if file_path == reg or file_path.startswith(reg + os.sep):
-                return row['tier']
-        return None
+                if len(reg) > best_len:
+                    best_len = len(reg)
+                    best_match = row['tier']
+        return best_match
 
 
     def rebuild_baseline(self):
@@ -88,13 +86,24 @@ class BaselineManager:
             
         return False
 
+    def _hash_with_retry(self, file_path: str, retries: int = 5, delay: float = 0.5):
+        """Hash a file with retries in case the file is still being written."""
+        for attempt in range(retries):
+            sha256, blake3 = HashEngine.hash_file(file_path)
+            # e3b0c44... is the SHA-256 of an empty file — retry if file appears empty
+            if sha256 and sha256 != 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855':
+                return sha256, blake3
+            if attempt < retries - 1:
+                time.sleep(delay)
+        return sha256, blake3  # Return whatever we have on last attempt
+
     def _add_or_update_file(self, file_path: str, tier: str):
         if self._is_internal_file(file_path):
             return
         is_dir = os.path.isdir(file_path)
         sha256 = "dir"
         if not is_dir:
-            sha256, blake3 = HashEngine.hash_file(file_path)
+            sha256, blake3 = self._hash_with_retry(file_path)
             if not sha256:
                 return
             
@@ -162,43 +171,69 @@ class BaselineManager:
         if operation == 'DELETED':
             if existing:
                 self._dispatch_incident(existing[0]['id'], existing[0]['current_hash'], None, event)
+                # Mirror copy is intentionally kept in vault even when source is deleted
             return
             
         if os.path.isdir(file_path):
             new_sha256 = "dir"
             new_blake3 = None
         else:
-            new_sha256, new_blake3 = HashEngine.hash_file(file_path)
+            new_sha256, new_blake3 = self._hash_with_retry(file_path)
         
         if operation in ('CREATED', 'MODIFIED', 'RENAMED'):
             if existing:
                 old_hash = existing[0]['current_hash']
                 file_id = existing[0]['id']
+                tier = existing[0]['tier']
                 if old_hash != new_sha256:
                     self._dispatch_incident(file_id, old_hash, new_sha256, event)
                     # Update baseline to reflect new reality
-                    self._add_or_update_file(file_path, existing[0]['tier'])
+                    self._add_or_update_file(file_path, tier)
+                    # Mirror the updated file into vault for all tiers
+                    if self.rollback_engine and not os.path.isdir(file_path):
+                        self.rollback_engine.mirror_file(file_path)
+                    # For critical files being renamed or modified (e.g. Office save pattern),
+                    # ensure a vault snapshot exists with the LATEST content
+                    if tier == 'critical' and self.rollback_engine and not os.path.isdir(file_path) and operation == 'RENAMED':
+                        now = datetime.now().isoformat()
+                        snap_hash, _ = self._hash_with_retry(file_path)
+                        if snap_hash:
+                            vault_path = self.rollback_engine.store_version(file_path, snap_hash)
+                            if vault_path:
+                                logger.info(f"Vault snapshot taken after rename (Office save) for: {file_path}")
+                                self.db.execute(
+                                    """INSERT INTO hash_history 
+                                       (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
+                                       VALUES (?, ?, ?, ?, 'POST_RENAME_SNAPSHOT', ?, 1)""",
+                                    (file_id, old_hash, snap_hash, now, vault_path)
+                                )
             else:
                 # File created in a monitored path but wasn't in baseline yet
                 tier = self._get_covering_tier(file_path)
                 if not tier:
                     return
-                self._add_or_update_file(file_path, tier) # Inherit tier from parent
+                self._add_or_update_file(file_path, tier)
                 new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
                 if new_row:
                     self._dispatch_incident(new_row[0]['id'], None, new_sha256, event)
+                    # Mirror the new file into vault for ALL tiers
+                    if self.rollback_engine and not os.path.isdir(file_path):
+                        self.rollback_engine.mirror_file(file_path)
                     # Immediately vault-snapshot the new file if it's in a critical path
-                    if tier == 'critical' and self.rollback_engine and new_sha256 and not os.path.isdir(file_path):
+                    if tier == 'critical' and self.rollback_engine and not os.path.isdir(file_path):
                         now = datetime.now().isoformat()
-                        vault_path = self.rollback_engine.store_version(file_path, new_sha256)
-                        if vault_path:
-                            logger.info(f"Vault snapshot created for new critical file: {file_path}")
-                            self.db.execute(
-                                """INSERT INTO hash_history 
-                                   (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
-                                   VALUES (?, ?, ?, ?, 'INITIAL_SNAPSHOT', ?, 1)""",
-                                (new_row[0]['id'], None, new_sha256, now, vault_path)
-                            )
+                        # Re-hash with retry to ensure file is fully written before snapshotting
+                        snap_hash, _ = self._hash_with_retry(file_path)
+                        if snap_hash:
+                            vault_path = self.rollback_engine.store_version(file_path, snap_hash)
+                            if vault_path:
+                                logger.info(f"Vault snapshot created for new critical file: {file_path}")
+                                self.db.execute(
+                                    """INSERT INTO hash_history 
+                                       (file_id, old_hash, new_hash, changed_at, change_type, vault_entry_path, rollback_available)
+                                       VALUES (?, ?, ?, ?, 'INITIAL_SNAPSHOT', ?, 1)""",
+                                    (new_row[0]['id'], None, snap_hash, now, vault_path)
+                                )
 
     def _dispatch_incident(self, file_id: int, old_hash: Optional[str], new_hash: Optional[str], event: Dict[str, Any]):
         now = datetime.now().isoformat()

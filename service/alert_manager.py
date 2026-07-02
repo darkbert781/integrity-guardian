@@ -12,7 +12,8 @@ class AlertManager:
         severity = incident.get('severity', 'INFO')
         if severity not in ['WARNING', 'CRITICAL']:
             return
-            
+        # Always reload channels from config so live changes are picked up
+        self.channels = self.config.get("alert_channels", {})
         logger.info(f"Dispatching {severity} alert for incident: {incident}")
         
         if self.channels.get("email", {}).get("enabled"):
