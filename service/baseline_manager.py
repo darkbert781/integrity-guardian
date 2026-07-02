@@ -127,6 +127,9 @@ class BaselineManager:
                     (sha256, row['id'])
                 )
                 logger.debug(f"Updated baseline for {file_path}")
+            # Always mirror the current file content (update mirror on every change)
+            if not is_dir and self.rollback_engine:
+                self.rollback_engine.mirror_file(file_path)
         else:
             # Insert new baseline
             self.db.execute(
@@ -136,8 +139,12 @@ class BaselineManager:
                 (file_path, sha256, tier)
             )
             logger.debug(f"Added {file_path} to baseline")
+
+            # Mirror ALL newly discovered files to vault regardless of tier
+            if not is_dir and self.rollback_engine:
+                self.rollback_engine.mirror_file(file_path)
             
-            # For critical-tier files, take an initial encrypted vault snapshot
+            # For critical-tier files, also take an encrypted vault snapshot
             if tier == 'critical' and not is_dir and self.rollback_engine:
                 vault_path = self.rollback_engine.store_version(file_path, sha256)
                 if vault_path:

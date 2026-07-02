@@ -36,8 +36,14 @@ class IGEventHandler(FileSystemEventHandler):
         })
 
     def on_moved(self, event):
+        if event.is_directory:
+            return
+        # Translate move/rename to MODIFIED for the destination file.
+        # This handles Office apps (Word, Excel, PPT) which save by writing a temp
+        # file then renaming it to the final filename — from the user's point of view
+        # this is simply a file edit (MODIFIED), not a rename.
         self.baseline_manager.handle_event({
-            'operation': 'RENAMED',
+            'operation': 'MODIFIED',
             'file_path': event.dest_path,
             'process_name': 'Unknown',
             'source': 'watchdog'
