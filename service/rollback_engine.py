@@ -24,8 +24,12 @@ class RollbackEngine:
         os.makedirs(self.vault_path, exist_ok=True)
         os.makedirs(os.path.join(self.vault_path, "mirror"), exist_ok=True)
 
-    def store_version(self, file_path: str, sha256_hash: str) -> Optional[str]:
-        """Encrypt and copy the file into the vault as a snapshot. Returns the vault path or None."""
+    def store_version(self, file_path: str, sha256_hash: str, retries: int = 5, delay: float = 0.8) -> Optional[str]:
+        """Encrypt and copy any file type into the vault as a snapshot.
+        Supports: documents, images, binaries, archives, databases, executables, media, etc.
+        Retries on locked files (Office, SQLite WAL-mode DBs, etc.).
+        Returns the vault path or None on failure.
+        """
         if not os.path.exists(file_path) or os.path.isdir(file_path):
             return None
         # Don't snapshot empty files — e3b0c44... is SHA-256 of zero bytes
@@ -33,57 +37,95 @@ class RollbackEngine:
         if sha256_hash == EMPTY_HASH or os.path.getsize(file_path) == 0:
             logger.debug(f"Skipping vault snapshot for empty file: {file_path}")
             return None
-            
-        try:
-            vault_file_name = f"{sha256_hash}_{int(time.time())}.igv"
-            vault_file_path = os.path.join(self.vault_path, vault_file_name)
-            
-            with open(file_path, 'rb') as f:
-                data = f.read()
-                
-            encrypted_data = self.fernet.encrypt(data)
-            
-            with open(vault_file_path, 'wb') as f:
-                f.write(encrypted_data)
 
-            logger.info(f"Vault snapshot stored: {vault_file_path}")
+        vault_file_name = f"{sha256_hash}_{int(time.time())}.igv"
+        vault_file_path = os.path.join(self.vault_path, vault_file_name)
 
-            # Also mirror the actual file into vault/mirror/ preserving directory structure
-            self.mirror_file(file_path)
+        last_error = None
+        for attempt in range(retries):
+            try:
+                # Read all bytes (works for ANY file type — binary, text, media, archive)
+                with open(file_path, 'rb') as f:
+                    data = f.read()
 
-            # Prune old snapshots for this file to keep the vault lean
-            self._prune_old_versions(file_path)
+                encrypted_data = self.fernet.encrypt(data)
 
-            return vault_file_path
-        except Exception as e:
-            logger.error(f"Failed to store version for {file_path}: {e}")
-            return None
+                with open(vault_file_path, 'wb') as f:
+                    f.write(encrypted_data)
 
-    def mirror_file(self, file_path: str):
-        """Copy the actual file into vault/mirror/ without preserving directory structure."""
+                logger.info(f"Vault snapshot stored: {vault_file_path}")
+
+                # Mirror the raw file too
+                self.mirror_file(file_path)
+
+                # Prune old snapshots for this file to keep the vault lean
+                self._prune_old_versions(file_path)
+
+                return vault_file_path
+
+            except PermissionError as e:
+                last_error = e
+                logger.debug(f"Snapshot attempt {attempt+1}/{retries} locked for {file_path}, retrying in {delay}s")
+                time.sleep(delay)
+            except Exception as e:
+                logger.error(f"Failed to store version for {file_path}: {e}")
+                return None
+
+        logger.warning(f"Vault snapshot failed for {file_path} after {retries} attempts: {last_error}")
+        return None
+
+    def mirror_file(self, file_path: str, retries: int = 5, delay: float = 0.8):
+        """Copy any file type into vault/mirror/ without preserving directory structure.
+        Retries on locked files (e.g. open Word/Excel documents, database files).
+        Supports all file types: binary, text, media, archives, executables, etc.
+        """
         try:
             if not os.path.exists(file_path) or os.path.isdir(file_path):
                 return
             # Save just the file name directly in mirror directory
             filename = os.path.basename(file_path)
             mirror_dest = os.path.join(self.vault_path, "mirror", filename)
-            os.makedirs(os.path.dirname(mirror_dest), exist_ok=True)
-            import shutil as _shutil
-            _shutil.copy2(file_path, mirror_dest)
-            logger.info(f"Mirrored file to vault: {mirror_dest}")
+            os.makedirs(os.path.join(self.vault_path, "mirror"), exist_ok=True)
+
+            last_error = None
+            for attempt in range(retries):
+                try:
+                    import shutil as _shutil
+                    # Copy preserving all metadata (timestamps, permissions)
+                    _shutil.copy2(file_path, mirror_dest)
+                    logger.info(f"Mirrored file to vault: {mirror_dest}")
+                    return  # success
+                except PermissionError as e:
+                    last_error = e
+                    logger.debug(f"Mirror attempt {attempt+1}/{retries} locked for {file_path}, retrying in {delay}s")
+                    time.sleep(delay)
+                except OSError as e:
+                    # Handle read-only destination — clear attribute and retry
+                    if os.path.exists(mirror_dest):
+                        try:
+                            os.chmod(mirror_dest, 0o644)
+                            import shutil as _shutil
+                            _shutil.copy2(file_path, mirror_dest)
+                            logger.info(f"Mirrored file to vault (after chmod): {mirror_dest}")
+                            return
+                        except Exception:
+                            pass
+                    last_error = e
+                    time.sleep(delay)
+
+            if last_error:
+                logger.warning(f"Mirror failed for {file_path} after {retries} attempts: {last_error}")
         except Exception as e:
-            logger.warning(f"Failed to mirror file {file_path} to vault: {e}")
+            logger.warning(f"Mirror unexpected error for {file_path}: {e}")
 
     def delete_mirror(self, file_path: str):
-        """Remove the mirrored file from vault/mirror/ when it is deleted from source."""
-        try:
-            filename = os.path.basename(file_path)
-            mirror_dest = os.path.join(self.vault_path, "mirror", filename)
-            if os.path.exists(mirror_dest):
-                os.remove(mirror_dest)
-                logger.info(f"Removed mirror file from vault: {mirror_dest}")
-        except Exception as e:
-            logger.warning(f"Failed to remove mirror for {file_path}: {e}")
+        """Remove the mirrored file from vault/mirror/ when it is deleted from source.
+        Per user policy: mirror is PRESERVED on source deletion (survives deletion).
+        This method is intentionally a no-op to implement that policy.
+        """
+        # Mirror preservation policy: do NOT delete the mirror when source is deleted.
+        # The mirror acts as a last-resort backup of the last known good state.
+        logger.debug(f"Mirror preserved on deletion (policy): {os.path.basename(file_path)}")
 
     def rollback_file(self, vault_entry_path: str, original_path: str) -> bool:
         """Decrypt and restore a file from the vault to its original path."""

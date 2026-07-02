@@ -42,12 +42,20 @@ class BaselineManager:
         logger.info("Starting baseline rebuild...")
         paths_config = self._get_monitored_paths()
         
+        # Fallback: if config has no paths, read registered dirs directly from DB
+        if not paths_config:
+            db_dirs = self.db.query("SELECT DISTINCT file_path, tier FROM baselines")
+            for row in db_dirs:
+                p = row['file_path']
+                if os.path.isdir(p):
+                    paths_config.append({"path": p, "tier": row['tier'], "recursive": True})
+        
         for p_info in paths_config:
             path = p_info.get("path")
             tier = p_info.get("tier", "standard")
-            recursive = p_info.get("recursive", False)
+            recursive = p_info.get("recursive", True)
             
-            if not os.path.exists(path):
+            if not path or not os.path.exists(path):
                 logger.warning(f"Configured path does not exist: {path}")
                 continue
                 
@@ -57,6 +65,7 @@ class BaselineManager:
                 self._process_directory(path, recursive, tier)
                 
         logger.info("Baseline rebuild complete.")
+
 
     def _process_directory(self, dir_path: str, recursive: bool, tier: str):
         if recursive:
@@ -69,22 +78,43 @@ class BaselineManager:
                 full_path = os.path.join(dir_path, item)
                 self._add_or_update_file(full_path, tier)
     def _is_internal_file(self, file_path: str) -> bool:
+        """Return True for system/temp noise that should NEVER be monitored.
+        ALL other file types (documents, images, archives, databases, executables,
+        media, source code, spreadsheets, PDFs, etc.) are explicitly allowed through.
+        """
         base = os.path.basename(file_path)
-        
-        # Skip internal database/log files
-        if base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm', 'ig_service.log', 'log.txt'):
+        ext  = os.path.splitext(base)[1].lower()
+
+        # ── Internal IG files ──────────────────────────────────────────────────
+        if base in ('integrity.db', 'integrity.db-wal', 'integrity.db-shm',
+                    'ig_service.log', 'log.txt', 'desktop.ini', 'thumbs.db',
+                    '.DS_Store'):
             return True
-        
-        # Skip Office lock/temp files (~$file.docx, ~WRD0000.tmp, ~WRL0001.tmp, *.tmp)
-        if base.startswith('~') or base.endswith('.tmp') or base.endswith('.TMP'):
+
+        # ── Office / Windows temp & lock files ────────────────────────────────
+        # ~$document.docx  ~WRD0000.tmp  ~WRL0001.tmp  *.tmp  *.TMP
+        if base.startswith('~') or ext in ('.tmp', '.temp', '.crdownload',
+                                           '.part', '.partial'):
             return True
-        
-        # Skip Ignore noisy developer/system directories
+
+        # ── Windows system noise ──────────────────────────────────────────────
+        if ext in ('.lnk', '.ini', '.url', '.sys', '.log',
+                   '.etl', '.evtx'):
+            return True
+
+        # ── Browser / index cache ─────────────────────────────────────────────
+        if base in ('CACHEDIR.TAG', 'cache.db', 'index.dat'):
+            return True
+
+        # ── Noisy developer / system directories ──────────────────────────────
         parts = file_path.split(os.sep)
-        if any(ignored in parts for ignored in ('.git', 'node_modules', '.venv', '__pycache__', 'venv_packages', '.pytest_cache')):
+        IGNORED_DIRS = {'.git', 'node_modules', '.venv', '__pycache__',
+                        'venv_packages', '.pytest_cache', '.mypy_cache',
+                        '.tox', 'dist', 'build', '.idea', '.vs'}
+        if any(d in parts for d in IGNORED_DIRS):
             return True
-            
-        return False
+
+        return False  # ← Allow ALL other file types through
 
     def _hash_with_retry(self, file_path: str, retries: int = 5, delay: float = 0.5):
         """Hash a file with retries in case the file is still being written."""
