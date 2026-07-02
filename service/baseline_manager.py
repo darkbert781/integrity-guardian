@@ -21,22 +21,22 @@ class BaselineManager:
     def _get_monitored_paths(self) -> List[Dict[str, Any]]:
         return self.config.get("monitored_paths", [])
 
-    def _is_path_covered(self, file_path: str) -> bool:
-        """Check if file_path falls under a user-registered path.
+    def _get_covering_tier(self, file_path: str) -> Optional[str]:
+        """Check if file_path falls under a user-registered path and return its tier.
         Reads from the baselines DB table (shared with the API process)
         rather than the potentially stale in-memory config.
         """
         # Fetch all directory entries in baselines — these are the registered roots
         registered_dirs = self.db.query(
-            "SELECT file_path FROM baselines WHERE current_hash IN ('dir', 'MONITORED', 'PENDING')"
+            "SELECT file_path, tier FROM baselines WHERE current_hash IN ('dir', 'MONITORED', 'PENDING')"
         )
         for row in registered_dirs:
             reg = row['file_path']
             if not os.path.isdir(reg):
                 continue
             if file_path == reg or file_path.startswith(reg + os.sep):
-                return True
-        return False
+                return row['tier']
+        return None
 
 
     def rebuild_baseline(self):
@@ -174,9 +174,10 @@ class BaselineManager:
                     self._add_or_update_file(file_path, existing[0]['tier'])
             else:
                 # File created in a monitored path but wasn't in baseline yet
-                if not self._is_path_covered(file_path):
+                tier = self._get_covering_tier(file_path)
+                if not tier:
                     return
-                self._add_or_update_file(file_path, "standard") # Default tier
+                self._add_or_update_file(file_path, tier) # Inherit tier from parent
                 new_row = self.db.query("SELECT id FROM baselines WHERE file_path = ?", (file_path,))
                 if new_row:
                     self._dispatch_incident(new_row[0]['id'], None, new_sha256, event)
@@ -210,13 +211,22 @@ class BaselineManager:
                     (event_id, severity, now, 'NEW', 'SYSTEM', f"File {event['operation']} detected: {event['file_path']}")
                 )
             
-            if old_hash != new_hash and event['operation'] != 'DELETED':
-                # For critical-tier files, snapshot the CURRENT (pre-change) version for rollback
+            if old_hash != new_hash:
                 vault_path = None
-                if tier == 'critical' and self.rollback_engine and old_hash:
-                    vault_path = self.rollback_engine.store_version(event['file_path'], old_hash)
-                    if vault_path:
-                        logger.info(f"Vault snapshot taken before change: {event['file_path']}")
+                if event['operation'] != 'DELETED':
+                    # For critical-tier files, snapshot the CURRENT (pre-change) version for rollback
+                    if tier == 'critical' and self.rollback_engine and old_hash:
+                        vault_path = self.rollback_engine.store_version(event['file_path'], old_hash)
+                        if vault_path:
+                            logger.info(f"Vault snapshot taken before change: {event['file_path']}")
+                else:
+                    # For DELETED files, find the most recent snapshot to link it so it can be restored
+                    prev_snapshots = self.db.query(
+                        "SELECT vault_entry_path FROM hash_history WHERE file_id = ? AND rollback_available = 1 ORDER BY changed_at DESC LIMIT 1",
+                        (file_id,)
+                    )
+                    if prev_snapshots and prev_snapshots[0]['vault_entry_path']:
+                        vault_path = prev_snapshots[0]['vault_entry_path']
 
                 self.db.execute(
                     """INSERT INTO hash_history 
