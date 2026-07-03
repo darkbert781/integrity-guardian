@@ -22,9 +22,7 @@ export function Vault() {
   const fetchConfig = () => {
     api.get('/settings/')
       .then(r => {
-        if (r.data?.config?.vault_dir) {
-          setVaultPath(r.data.config.vault_dir);
-        } else if (r.data?.config?.vault_path) {
+        if (r.data?.config?.vault_path) {
           setVaultPath(r.data.config.vault_path);
         }
       })

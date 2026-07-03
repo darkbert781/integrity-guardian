@@ -108,6 +108,10 @@ def run_standalone():
                             key_bytes = machine_guid[:32].encode('utf-8')
                             rollback_engine.fernet = Fernet(base64.urlsafe_b64encode(key_bytes))
                             logger.info(f"Hot-swapped vault path to: {new_vault}")
+                        
+                        # watchdog_thread automatically polls the DB every 5s for new paths,
+                        # so we only need to rebuild the baseline to insert them.
+                        baseline_manager.rebuild_baseline()
             except Exception as e:
                 pass
     except KeyboardInterrupt:

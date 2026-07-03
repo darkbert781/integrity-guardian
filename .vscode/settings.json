@@ -10,5 +10,11 @@
   },
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/venv_packages",
+    "${workspaceFolder}/service"
+  ],
+  "python.analysis.ignore": ["**/venv_packages/**"]
 }

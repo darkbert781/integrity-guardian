@@ -29,6 +29,7 @@ def get_gemini_client():
                             break
         if not api_key:
             return None
+        
         genai.configure(api_key=api_key)
 
         candidate_models = [
@@ -124,7 +125,7 @@ Instructions:
     import google.generativeai as genai
     api_key = os.environ.get("GEMINI_API_KEY", "")
     genai.configure(api_key=api_key)
-
+    
     candidate_models = [
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",

@@ -40,10 +40,20 @@ def startup_event():
     
     schema_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "service", "db", "schema.sql")
     db_manager.init_schema(schema_path)
+
+    # Read machine GUID from Windows registry — MUST match what run_standalone.py uses
+    # so both processes share the same Fernet encryption key.
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography", 0,
+                            winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as key:
+            machine_guid, _ = winreg.QueryValueEx(key, "MachineGuid")
+    except Exception:
+        machine_guid = "DEFAULT-MACHINE-GUID"
     
     app.state.db_manager = db_manager
     app.state.config_manager = config_manager
-    app.state.rollback_engine = RollbackEngine(db_manager, vault_path, encryption_key)
+    app.state.rollback_engine = RollbackEngine(db_manager, vault_path, machine_guid)
 
 def get_db(request: Request):
     return request.app.state.db_manager

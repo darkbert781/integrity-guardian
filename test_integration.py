@@ -249,7 +249,7 @@ if not api_key:
             print(f"    → [{r['event_type']}] {r['file_path']}")
 else:
     try:
-        import google.generativeai as genai
+        import google.generativeai as genai  # type: ignore
         genai.configure(api_key=api_key)
 
         events_rows = db.query(
