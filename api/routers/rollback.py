@@ -78,7 +78,7 @@ def trigger_rollback(hist_id: int, db=Depends(get_db), rollback_engine=Depends(g
 
     # Re-baseline the restored file so it doesn't immediately trigger a new alert
     try:
-        from hash_engine import HashEngine
+        from service.hash_engine import HashEngine
         new_hash, _ = HashEngine.hash_file(file_path)
         if new_hash:
             db.execute(

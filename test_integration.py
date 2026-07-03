@@ -91,11 +91,11 @@ except Exception as e:
     machine_guid = "DEFAULT-MACHINE-GUID"
     check("Machine GUID read from registry", False, str(e))
 
-from db.db_manager import DatabaseManager
-from config_manager import ConfigManager
-from rollback_engine import RollbackEngine
-from baseline_manager import BaselineManager
-from hash_engine import HashEngine
+from service.db.db_manager import DatabaseManager
+from service.config_manager import ConfigManager
+from service.rollback_engine import RollbackEngine
+from service.baseline_manager import BaselineManager
+from service.hash_engine import HashEngine
 
 db       = DatabaseManager(DB_PATH, use_encryption=False)
 config   = ConfigManager(CONFIG_PATH)
