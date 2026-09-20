@@ -1,9 +1,14 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+
 class LoginRequest(BaseModel):
     username: str
     password: str
+    otp: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str

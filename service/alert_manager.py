@@ -21,6 +21,22 @@ class AlertManager:
             
         if self.channels.get("teams", {}).get("enabled"):
             self._send_teams(incident)
+            
+        # Add SMS support via logging for now
+        self._send_sms(incident)
+
+    def _send_sms(self, incident: Dict[str, Any]):
+        import os
+        sms_to = os.environ.get("SMS_TO_PHONE")
+        if not sms_to:
+            return
+            
+        severity = incident.get('severity', 'INFO')
+        file_path = incident.get('file_path', 'Unknown')
+        event_type = incident.get('event_type', 'MODIFIED')
+        
+        message = f"Integrity Guardian {severity} ALERT: {event_type} on {file_path}."
+        logger.info(f"[SMS MOCK] Sending SMS to {sms_to}: {message}")
 
     def _send_email(self, incident: Dict[str, Any]):
         import os

@@ -64,6 +64,55 @@ def get_settings(request: Request):
         pass
     return {"config": env_cfg}
 
+@router.get("/notifications")
+def get_notifications(request: Request):
+    # TODO: add admin auth dependency here
+    env_cfg = read_env()
+    return {
+        "resend_from_email": env_cfg.get("resend_from_email", ""),
+        "resend_to_email": env_cfg.get("resend_to_email", ""),
+        "sms_to_phone": env_cfg.get("sms_to_phone", "")
+    }
+
+from fastapi import HTTPException
+from pydantic import BaseModel
+
+class NotificationUpdate(BaseModel):
+    resend_from_email: str = None
+    resend_to_email: str = None
+    sms_to_phone: str = None
+    old_resend_to_email: str = None
+    old_sms_to_phone: str = None
+
+@router.put("/notifications")
+def update_notifications(data: NotificationUpdate, request: Request):
+    # TODO: add admin auth dependency here
+    env_cfg = read_env()
+    
+    # Confirm existing contacts if they are set
+    existing_to_email = env_cfg.get("resend_to_email")
+    if existing_to_email and data.resend_to_email and data.resend_to_email != existing_to_email:
+        if data.old_resend_to_email != existing_to_email:
+            raise HTTPException(status_code=400, detail="Must provide the correct existing email to change it.")
+            
+    existing_sms = env_cfg.get("sms_to_phone")
+    if existing_sms and data.sms_to_phone and data.sms_to_phone != existing_sms:
+        if data.old_sms_to_phone != existing_sms:
+            raise HTTPException(status_code=400, detail="Must provide the correct existing phone number to change it.")
+            
+    updates = {}
+    if data.resend_from_email is not None:
+        updates["RESEND_FROM_EMAIL"] = data.resend_from_email
+    if data.resend_to_email is not None:
+        updates["RESEND_TO_EMAIL"] = data.resend_to_email
+    if data.sms_to_phone is not None:
+        updates["SMS_TO_PHONE"] = data.sms_to_phone
+        
+    if updates:
+        write_env(updates)
+        
+    return {"status": "updated"}
+
 
 @router.put("/")
 def update_settings(new_settings: dict, request: Request):
