@@ -7,7 +7,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup")
 def signup(req: SignupRequest, request: Request):
-    db = request.app.state.db
+    db = request.app.state.db_manager
     # Check if username exists
     existing = db.query("SELECT username FROM users WHERE username = ?", (req.username,))
     if existing:
@@ -27,7 +27,7 @@ def signup(req: SignupRequest, request: Request):
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, request: Request):
-    db = request.app.state.db
+    db = request.app.state.db_manager
     
     user = db.query("SELECT * FROM users WHERE username = ?", (req.username,))
     if not user:
