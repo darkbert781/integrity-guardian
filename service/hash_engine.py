@@ -1,6 +1,9 @@
 import hashlib
 import os
-import blake3
+try:
+    import blake3
+except ImportError:
+    blake3 = None
 import logging
 from typing import Dict, Optional
 
@@ -70,7 +73,7 @@ class HashEngine:
     @classmethod
     def compute_blake3(cls, file_path: str) -> Optional[str]:
         """Computes Blake3 hash for large files."""
-        if not os.path.isfile(file_path):
+        if not os.path.isfile(file_path) or blake3 is None:
             return None
         hasher = blake3.blake3()
         try:

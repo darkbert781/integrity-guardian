@@ -21,7 +21,7 @@ BASE_DIR = r"C:\Users\Alinaswe\Desktop\integrity_guardian"
 DB_PATH = os.path.join(BASE_DIR, "integrity.db")
 TEST_DIR = os.path.join(BASE_DIR, "test_sandbox")
 SCHEMA_PATH = os.path.join(BASE_DIR, "service", "db", "schema.sql")
-API_URL = "http://localhost:7890"
+API_URL = "http://127.0.0.1:7890"
 
 PASS = "[PASS]"
 FAIL = "[FAIL]"
