@@ -13,6 +13,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { Login }        from './pages/Login';
+import { Signup }       from './pages/Signup';
 import { Overview }     from './pages/Overview';
 import { EventFeed }    from './pages/EventFeed';
 import { Alerts }       from './pages/Alerts';
@@ -153,6 +154,9 @@ function App() {
       <Routes>
         <Route path="/login" element={
           isAuthenticated ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />
+        } />
+        <Route path="/signup" element={
+          isAuthenticated ? <Navigate to="/" replace /> : <Signup />
         } />
         <Route path="/*" element={
           isAuthenticated ? <DashboardLayout onLogout={handleLogout} /> : <Navigate to="/login" replace />
