@@ -92,6 +92,15 @@ class WatchdogThread(threading.Thread):
                     # Automatically build baseline for newly registered paths
                     if row['current_hash'] == 'PENDING':
                         self.baseline_manager.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
+                        
+                        # Apply preventative access control (NTFS ACL Hardening) for critical paths
+                        if row['tier'] == 'critical':
+                            try:
+                                from access_controller import AccessController
+                                AccessController.lock_path(path)
+                            except Exception as ex:
+                                logger.error(f"Access Controller failed to lock path {path}: {ex}")
+
                         if is_dir:
                             threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row['tier']), daemon=True).start()
                         elif os.path.exists(path):

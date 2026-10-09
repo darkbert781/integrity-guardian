@@ -8,6 +8,11 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+try:
+    from access_controller import AccessController
+except ImportError:
+    AccessController = None
+
 MAX_VERSIONS_PER_FILE = 5  # Maximum vault snapshots to keep per file
 
 class RollbackEngine:
@@ -142,11 +147,20 @@ class RollbackEngine:
             # Ensure parent directory exists
             os.makedirs(os.path.dirname(original_path), exist_ok=True)
             
+            # Temporarily unlock the path so we can write the restored file
+            unlocked = False
+            if AccessController:
+                unlocked = AccessController.unlock_path(original_path)
+            
             with open(original_path, 'wb') as f:
                 f.write(decrypted_data)
                 
             # Update the mirror in the vault to reflect the restored file
             self.mirror_file(original_path)
+            
+            # Re-lock the path after restoration if it was previously locked
+            if AccessController and unlocked:
+                AccessController.lock_path(original_path)
             
             logger.info(f"Successfully rolled back {original_path}")
             return True

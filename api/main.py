@@ -9,7 +9,7 @@ from service.db.db_manager import DatabaseManager
 from service.config_manager import ConfigManager
 from service.rollback_engine import RollbackEngine
 
-from .routers import auth, events, alerts, baseline, files, rollback, compliance, query, settings, system
+from .routers import auth, events, alerts, baseline, files, rollback, compliance, query, settings, system, access
 
 app = FastAPI(title="Integrity Guardian API", version="2.0")
 
@@ -71,6 +71,7 @@ app.include_router(compliance.router)
 app.include_router(query.router)
 app.include_router(settings.router)
 app.include_router(system.router)
+app.include_router(access.router)
 
 @app.get("/")
 def root():

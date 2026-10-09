@@ -27,16 +27,47 @@ class AlertManager:
 
     def _send_sms(self, incident: Dict[str, Any]):
         import os
-        sms_to = os.environ.get("SMS_TO_PHONE")
-        if not sms_to:
+        import requests
+        
+        # We only send SMS for CRITICAL severity to avoid spam
+        severity = incident.get('severity', 'INFO')
+        if severity != 'CRITICAL':
             return
             
-        severity = incident.get('severity', 'INFO')
+        api_key = os.environ.get("TEXTBEE_API_KEY")
+        device_id = os.environ.get("TEXTBEE_DEVICE_ID")
+        to_phone = os.environ.get("ALERT_PHONE_NUMBER")
+        
+        if not all([api_key, device_id, to_phone]) or to_phone == "your_personal_phone_number":
+            logger.info("TextBee SMS not fully configured in .env. Skipping SMS alert.")
+            return
+            
         file_path = incident.get('file_path', 'Unknown')
         event_type = incident.get('event_type', 'MODIFIED')
         
-        message = f"Integrity Guardian {severity} ALERT: {event_type} on {file_path}."
-        logger.info(f"[SMS MOCK] Sending SMS to {sms_to}: {message}")
+        message_body = f"🛡️ IG CRITICAL ALERT\nAction: {event_type}\nFile: {file_path[-40:] if len(file_path)>40 else file_path}"
+        
+        try:
+            # Using TextBee to route SMS through the user's Android phone
+            url = f"https://api.textbee.dev/api/v1/gateway/devices/{device_id}/send-sms"
+            headers = {
+                "x-api-key": api_key,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "recipients": [to_phone],
+                "message": message_body
+            }
+            
+            resp = requests.post(url, headers=headers, json=payload)
+            
+            if resp.status_code in [200, 201]:
+                logger.info(f"TextBee SMS sent successfully to {to_phone} via Android Device.")
+            else:
+                logger.error(f"TextBee SMS failed: {resp.text}")
+                
+        except Exception as e:
+            logger.error(f"Failed to send TextBee SMS: {e}")
 
     def _send_email(self, incident: Dict[str, Any]):
         import os
