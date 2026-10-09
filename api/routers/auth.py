@@ -108,7 +108,10 @@ def login(req: LoginRequest, request: Request):
     if not req.otp:
         raise HTTPException(status_code=401, detail="OTP is required for MFA")
 
-    mfa_secret = user.get('mfa_secret', '')
+    try:
+        mfa_secret = user['mfa_secret'] or ''
+    except (IndexError, KeyError):
+        mfa_secret = ''
     if mfa_secret and mfa_secret != "DUMMY_MFA_SECRET":
         totp = pyotp.TOTP(mfa_secret)
         if not totp.verify(req.otp, valid_window=1):
