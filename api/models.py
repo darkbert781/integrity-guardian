@@ -13,7 +13,10 @@ class VerifySignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
-    otp: Optional[str] = None
+
+class LoginVerifyRequest(BaseModel):
+    session_token: str
+    otp: str
 
 class TokenResponse(BaseModel):
     access_token: str

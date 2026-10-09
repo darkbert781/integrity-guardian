@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from ..models import LoginRequest, SignupRequest, VerifySignupRequest, TokenResponse
+from ..models import LoginRequest, SignupRequest, VerifySignupRequest, LoginVerifyRequest, TokenResponse
 import hashlib
 import time
 import os
@@ -11,6 +11,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # ── In-memory pending signup store ────────────────────────────────────────────
 # { session_token: { username, password_hash, email, mfa_secret, otp, expires_at } }
 _pending_signups: dict = {}
+_pending_logins: dict = {}
 OTP_TTL_SECONDS = 600  # 10 minutes
 
 
@@ -20,6 +21,10 @@ def _cleanup_expired():
     expired = [k for k, v in _pending_signups.items() if v["expires_at"] < now]
     for k in expired:
         del _pending_signups[k]
+    
+    expired_logins = [k for k, v in _pending_logins.items() if v["expires_at"] < now]
+    for k in expired_logins:
+        del _pending_logins[k]
 
 
 def _send_signup_otp_email(to_addr: str, username: str, otp_code: str):
@@ -67,6 +72,48 @@ def _send_signup_otp_email(to_addr: str, username: str, otp_code: str):
         print(f"[Auth] Signup OTP email sent to {admin_email} (account: {username})")
     except Exception as e:
         print(f"[Auth] Failed to send signup OTP email: {e}")
+
+def _send_login_otp_email(username: str, otp_code: str):
+    """Send a 6-digit login verification code via Resend to the configured admin email."""
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    from_addr = os.environ.get("RESEND_FROM_EMAIL", "")
+    admin_email = os.environ.get("RESEND_TO_EMAIL", "")
+
+    if not api_key or not from_addr:
+        print("[Auth] Resend not configured — skipping login OTP email.")
+        return
+
+    try:
+        import resend
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": from_addr,
+            "to": [admin_email],
+            "subject": "[Integrity Guardian] Your Login Verification Code",
+            "html": f"""
+            <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#f4f7f6;border-radius:12px;">
+              <div style="background:#fff;border-radius:10px;padding:32px;border:1px solid #e6ebe9;">
+                <div style="text-align:center;margin-bottom:24px;">
+                  <h2 style="color:#101816;margin:0 0 6px;">🔐 Integrity Guardian</h2>
+                  <p style="color:#667370;margin:0;font-size:14px;">Administrator Login Verification</p>
+                </div>
+                <p style="color:#444;font-size:14px;">
+                  A login attempt was made for the account <strong>{username}</strong>.<br/>
+                  Enter the verification code below to securely sign in.
+                </p>
+                <div style="background:#f0fbf8;border:2px solid #14b891;border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
+                  <p style="margin:0 0 8px;font-size:12px;color:#0e7c66;font-weight:600;text-transform:uppercase;letter-spacing:2px;">Verification Code</p>
+                  <div style="font-size:42px;font-weight:900;letter-spacing:14px;color:#101816;font-family:monospace;">{otp_code}</div>
+                  <p style="margin:12px 0 0;font-size:12px;color:#667370;">This code expires in <strong>10 minutes</strong>. Do not share it.</p>
+                </div>
+              </div>
+            </div>
+            """,
+        })
+        print(f"[Auth] Login OTP email sent to {admin_email} (account: {username})")
+    except Exception as e:
+        print(f"[Auth] Failed to send login OTP email: {e}")
+
 
 
 # ── Signup — step 1: send OTP, store pending ──────────────────────────────────
@@ -145,9 +192,10 @@ def verify_signup(req: VerifySignupRequest, request: Request):
     return {"message": "Account verified and created successfully."}
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
-@router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest, request: Request):
+# ── Login — step 1: check credentials, send OTP ─────────────────────────────
+@router.post("/login/request-otp")
+def login_request_otp(req: LoginRequest, request: Request):
+    _cleanup_expired()
     db = request.app.state.db_manager
 
     user = db.query("SELECT * FROM users WHERE username = ?", (req.username,))
@@ -160,22 +208,44 @@ def login(req: LoginRequest, request: Request):
     if user['password_hash'] != password_hash:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Validate TOTP OTP
-    if not req.otp:
-        raise HTTPException(status_code=401, detail="OTP is required for MFA")
+    # Generate a random 6-digit verification code
+    otp_code = str(secrets.randbelow(900000) + 100000)
+    session_token = secrets.token_urlsafe(32)
 
-    try:
-        mfa_secret = user['mfa_secret'] or ''
-    except (IndexError, KeyError):
-        mfa_secret = ''
+    _pending_logins[session_token] = {
+        "username": req.username,
+        "otp": otp_code,
+        "expires_at": time.time() + OTP_TTL_SECONDS,
+    }
 
-    if mfa_secret and mfa_secret != "DUMMY_MFA_SECRET":
-        totp = pyotp.TOTP(mfa_secret)
-        if not totp.verify(req.otp, valid_window=1):
-            raise HTTPException(status_code=401, detail="Invalid or expired OTP")
-    else:
-        # Legacy fallback
-        if req.otp != "123456":
-            raise HTTPException(status_code=401, detail="Invalid OTP")
+    _send_login_otp_email(
+        username=req.username,
+        otp_code=otp_code,
+    )
 
-    return {"access_token": f"mock_jwt_token_for_{req.username}", "token_type": "bearer"}
+    return {
+        "session_token": session_token,
+        "message": "Credentials verified. Verification code sent.",
+    }
+
+
+# ── Login — step 2: verify OTP and login ────────────────────────────────────
+@router.post("/login/verify-otp", response_model=TokenResponse)
+def login_verify_otp(req: LoginVerifyRequest, request: Request):
+    _cleanup_expired()
+
+    pending = _pending_logins.get(req.session_token)
+    if not pending:
+        raise HTTPException(status_code=401, detail="Session expired or invalid. Please sign in again.")
+
+    if time.time() > pending["expires_at"]:
+        del _pending_logins[req.session_token]
+        raise HTTPException(status_code=401, detail="Verification code has expired. Please sign in again.")
+
+    if req.otp.strip() != pending["otp"]:
+        raise HTTPException(status_code=401, detail="Invalid verification code. Please try again.")
+
+    username = pending["username"]
+    del _pending_logins[req.session_token]
+
+    return {"access_token": f"mock_jwt_token_for_{username}", "token_type": "bearer"}

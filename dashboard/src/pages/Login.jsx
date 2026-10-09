@@ -11,34 +11,43 @@ export function Login({ onLogin }) {
   const [username, setUsername]   = useState('');
   const [password, setPassword]   = useState('');
   const [otp, setOtp]             = useState('');
+  const [sessionToken, setSessionToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]         = useState('');
   const [loading, setLoading]     = useState(false);
 
-  // ── Step 1: validate credentials locally, advance to OTP step ────────────
-  const handleCredentials = () => {
+  // ── Step 1: validate credentials and request OTP ─────────────────────────
+  const handleCredentials = async () => {
     if (!username.trim()) return setError('Username is required.');
     if (!password)        return setError('Password is required.');
+    setLoading(true);
     setError('');
-    setStep(2);
+    try {
+      const res = await api.post('/auth/login/request-otp', { username, password });
+      setSessionToken(res.data.session_token);
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ── Step 2: submit everything to the backend ──────────────────────────────
+  // ── Step 2: verify OTP to get access token ──────────────────────────────
   const handleVerifyOtp = async () => {
     if (!otp) return setError('Please enter your OTP code.');
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/login', { username, password, otp });
+      const res = await api.post('/auth/login/verify-otp', { session_token: sessionToken, otp });
       onLogin(res.data.access_token);
     } catch (err) {
-      const detail = err.response?.data?.detail || 'Login failed.';
-      // If credentials were wrong the backend tells us — send back to step 1
-      if (detail.toLowerCase().includes('credential')) {
+      const detail = err.response?.data?.detail || 'Verification failed.';
+      if (detail.toLowerCase().includes('credential') || detail.toLowerCase().includes('expired')) {
         setStep(1);
         setPassword('');
         setOtp('');
-        setError('Invalid username or password. Please try again.');
+        setError(detail);
       } else {
         setOtp('');
         setError(detail);
@@ -141,10 +150,11 @@ export function Login({ onLogin }) {
               {/* Continue */}
               <button
                 onClick={handleCredentials}
-                className="w-full bg-[#14B891] hover:bg-[#0E7C66] text-white py-4 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+                disabled={loading}
+                className="w-full bg-[#14B891] hover:bg-[#0E7C66] text-white py-4 rounded-xl font-bold transition-all disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
               >
-                Continue
-                <span className="text-white/70">→</span>
+                {loading ? 'Verifying...' : 'Continue'}
+                {!loading && <span className="text-white/70">→</span>}
               </button>
 
               {/* Link to signup */}
@@ -185,7 +195,7 @@ export function Login({ onLogin }) {
                     Signing in as <span className="font-bold text-[#101816]">{username}</span>
                   </p>
                   <p className="text-xs text-[#667370] mt-1">
-                    Enter the OTP code from your account setup to continue.
+                    We just sent a 6-digit verification code to the admin email address.
                   </p>
                 </div>
               </div>
@@ -194,7 +204,7 @@ export function Login({ onLogin }) {
               <div>
                 <label className="block text-sm font-medium text-[#667370] mb-2 flex items-center gap-2">
                   <KeyRound className="w-3.5 h-3.5" />
-                  One-Time Password (OTP)
+                  Email Verification Code
                 </label>
                 <input
                   className="w-full p-4 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FDFCFA] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2] font-mono tracking-[0.5em] text-center text-xl"
@@ -208,7 +218,7 @@ export function Login({ onLogin }) {
                   autoFocus
                 />
                 <p className="mt-2 text-[11px] text-[#9AA6A2] text-center">
-                  Enter the 6-digit OTP shown after account creation.
+                  Check your inbox and enter the code above.
                 </p>
               </div>
 
