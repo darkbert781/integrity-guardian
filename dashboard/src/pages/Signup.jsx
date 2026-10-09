@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { UserPlus, CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertTriangle, Eye, EyeOff, Mail } from 'lucide-react';
 
 export function Signup() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +17,8 @@ export function Signup() {
   const validate = () => {
     if (!username.trim()) return 'Username is required.';
     if (username.length < 3) return 'Username must be at least 3 characters.';
+    if (!email.trim()) return 'Email is required.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
     if (!password) return 'Password is required.';
     if (password.length < 8) return 'Password must be at least 8 characters.';
     if (password !== confirmPassword) return 'Passwords do not match.';
@@ -29,7 +32,7 @@ export function Signup() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/signup', { username, password });
+      const res = await api.post('/auth/signup', { username, email, password });
       setSuccess(res.data);
     } catch (err) {
       setError(err.response?.data?.detail || 'Signup failed. Please try again.');
@@ -49,7 +52,7 @@ export function Signup() {
             </div>
             <h2 className="text-2xl font-bold text-[#101816]">Account Created!</h2>
             <p className="text-sm text-[#667370] mt-2 text-center">
-              Your administrator account has been created successfully.
+              Your administrator account has been created. An OTP email has been sent to the configured admin address.
             </p>
           </div>
 
@@ -116,6 +119,23 @@ export function Signup() {
               onChange={e => setUsername(e.target.value)}
               autoComplete="username"
             />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-[#667370] mb-2">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA6A2] pointer-events-none" />
+              <input
+                className="w-full pl-10 p-3.5 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FDFCFA] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all placeholder-[#9AA6A2]"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <p className="text-xs text-[#9AA6A2] mt-1.5">Your OTP setup code will be sent to the configured admin email.</p>
           </div>
 
           {/* Password */}
