@@ -6,6 +6,10 @@ class SignupRequest(BaseModel):
     password: str
     email: str
 
+class VerifySignupRequest(BaseModel):
+    session_token: str
+    otp: str
+
 class LoginRequest(BaseModel):
     username: str
     password: str

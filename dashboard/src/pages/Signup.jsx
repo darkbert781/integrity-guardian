@@ -12,7 +12,8 @@ export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null); // holds { mfa_secret }
+  const [success, setSuccess] = useState(null); // holds { session_token, message }
+  const [otp, setOtp] = useState('');
 
   const validate = () => {
     if (!username.trim()) return 'Username is required.';
@@ -41,6 +42,20 @@ export function Signup() {
     }
   };
 
+  const handleVerify = async () => {
+    if (!otp.trim()) return setError('Please enter the verification code.');
+    setLoading(true);
+    setError('');
+    try {
+      await api.post('/auth/verify-signup', { session_token: success.session_token, otp });
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Success screen ────────────────────────────────────────────────────────
   if (success) {
     return (
@@ -48,41 +63,39 @@ export function Signup() {
         <div className="bg-[#FDFCFA] p-10 rounded-2xl shadow-xl w-[460px] border border-[#E6EBE9] animate-fade-in-up">
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-full bg-[#E5F7F1] border border-[#CDEBE0] flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-[#14B891]" />
+              <Mail className="w-8 h-8 text-[#14B891]" />
             </div>
-            <h2 className="text-2xl font-bold text-[#101816]">Account Created!</h2>
+            <h2 className="text-2xl font-bold text-[#101816]">Check Your Email</h2>
             <p className="text-sm text-[#667370] mt-2 text-center">
-              Your administrator account has been created. An OTP email has been sent to the configured admin address.
+              We've sent a 6-digit verification code to the admin email address.
             </p>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-widest">Important — Save This</p>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 mb-6 p-4 rounded-lg text-sm text-center font-medium">
+              {error}
             </div>
-            <p className="text-xs text-amber-700 mb-3 leading-relaxed">
-              Multi-Factor Authentication is required to sign in. Use the OTP code below when logging in.
-              <br /><span className="font-bold">This will not be shown again.</span>
-            </p>
-            <div className="bg-white border border-amber-300 rounded-lg p-3 flex items-center justify-between gap-3">
-              <span className="text-xs text-[#667370] font-bold uppercase tracking-widest">OTP / MFA Secret</span>
-              <code className="text-sm font-mono font-bold text-[#101816] bg-amber-50 px-3 py-1 rounded border border-amber-200 tracking-widest select-all">
-                {success.mfa_secret}
-              </code>
-            </div>
-          </div>
+          )}
 
-          <div className="bg-[#F0FBF8] border border-[#CDEBE0] rounded-xl p-4 mb-6 text-xs text-[#0E7C66] leading-relaxed">
-            <strong>Next steps:</strong> Return to the sign-in page and enter your username, password,
-            and the OTP code above. Store this secret securely — it is your MFA credential.
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-[#667370] mb-2 text-center">Verification Code</label>
+            <input
+              className="w-full p-4 bg-[#F7F9F8] text-[#101816] rounded-xl border border-[#DCE4E1] focus:bg-[#FDFCFA] focus:border-[#14B891] focus:ring-4 focus:ring-[#14B891]/10 outline-none transition-all text-center text-2xl tracking-[0.5em] font-mono placeholder-[#9AA6A2]"
+              placeholder="000000"
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onKeyDown={e => e.key === 'Enter' && handleVerify()}
+              autoComplete="one-time-code"
+              maxLength={6}
+            />
           </div>
 
           <button
-            onClick={() => navigate('/login')}
-            className="w-full bg-[#14B891] hover:bg-[#0E7C66] text-white py-4 rounded-xl font-bold transition-all shadow-sm"
+            onClick={handleVerify}
+            disabled={loading || otp.length !== 6}
+            className="w-full bg-[#14B891] hover:bg-[#0E7C66] text-white py-4 rounded-xl font-bold transition-all disabled:opacity-50 mt-1 shadow-sm flex items-center justify-center gap-2"
           >
-            Go to Sign In
+            {loading ? 'Verifying...' : 'Verify & Complete Setup'}
           </button>
         </div>
       </div>
