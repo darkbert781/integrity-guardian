@@ -26,4 +26,4 @@ if os.path.exists(env_path):
 import uvicorn
 
 if __name__ == "__main__":
-    uvicorn.run("api.main:app", host="127.0.0.1", port=7890, reload=False)
+    uvicorn.run("api.main:app", host="0.0.0.0", port=7890, reload=False)
