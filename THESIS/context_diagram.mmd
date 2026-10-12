@@ -1,0 +1,46 @@
+graph TB
+    %% Context Diagram - Integrity Guardian System Context
+
+    subgraph Users["Human Actors & Administrators"]
+        ADMIN["Security Administrator / IT Operator<br/>(Monitors alerts, manages ACLs, triggers rollbacks)"]
+        ATTACKER["Adversary / Ransomware Process<br/>(Attempts unauthorized encryption or tampering)"]
+    end
+
+    subgraph System_Boundary["System Boundary: Integrity Guardian Toolkit"]
+        IG["Integrity Guardian Endpoint Defense Core<br/>• Real-Time Kernel Event Interception<br/>• Dynamic NTFS Discretionary Access Control (DACL)<br/>• Password-Gated Folder Maintenance<br/>• Cryptographic Hash Engine (SHA-256)<br/>• Self-Healing Encrypted Snapshot Vault (AES-256)<br/>• Immutable Audit Ledger & Event Ingestion"]
+    end
+
+    subgraph OS_Environment["Host Operating System Environment"]
+        NTFS["Windows NTFS File System<br/>(Protected directories, registry, binary targets)"]
+        KERNEL["Windows NT Security Reference Monitor (SRM)<br/>(Enforces file ACLs & intercepts I/O request packets)"]
+    end
+
+    subgraph External_Notification["External Communication Channels"]
+        RESEND["Resend Email Cloud Service<br/>(2FA/MFA OTPs & High-Priority Alerts)"]
+        TWILIO["Twilio SMS Gateway<br/>(Immediate Cellular Incident Notifications)"]
+    end
+
+    %% Interactions
+    ADMIN -->|HTTPS Web Interface: Configures monitoring, unlocks paths, executes rollbacks| IG
+    ATTACKER -.->|Attempts file modification or encryption| NTFS
+    NTFS <-->|Enforces ACL permissions & blocks writes| KERNEL
+
+    IG -->|Programmatically applies DENY Write DACLs| KERNEL
+    KERNEL -->|Streams real-time I/O events via ETW / ReadDirectoryChangesW| IG
+    IG <-->|Reads & restores pristine file snapshots| NTFS
+
+    IG -->|Dispatches emergency security alerts via REST API| RESEND
+    IG -->|Dispatches instant SMS breach notices via REST API| TWILIO
+    RESEND -->|Delivers 2FA OTP codes & threat emails| ADMIN
+    TWILIO -->|Delivers urgent SMS text alerts| ADMIN
+
+    %% Styles
+    classDef actor fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    classDef system fill:#1e1b4b,stroke:#818cf8,stroke-width:3px,color:#ffffff;
+    classDef os fill:#134e4a,stroke:#2dd4bf,stroke-width:2px,color:#ffffff;
+    classDef ext fill:#7c2d12,stroke:#fb923c,stroke-width:2px,color:#ffffff;
+
+    class ADMIN,ATTACKER actor;
+    class IG system;
+    class NTFS,KERNEL os;
+    class RESEND,TWILIO ext;

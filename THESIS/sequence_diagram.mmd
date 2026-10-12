@@ -1,0 +1,78 @@
+sequenceDiagram
+    autonumber
+    actor Admin as Security Administrator
+    participant UI as Dashboard UI (React 18)
+    participant API as REST API (FastAPI)
+    participant ACL as AccessController (icacls)
+    participant FS as Windows NTFS (Kernel)
+    participant Watch as Watchdog / ETW Observer
+    participant Vault as Rollback Vault (AES-256)
+    participant DB as SQLCipher Database
+    participant Notify as Alert Dispatcher (SMS/Email)
+    actor Attacker as Ransomware / Adversary
+
+    %% Phase 1: Critical Registration & Auto-Lock
+    rect rgb(240, 248, 255)
+    Note over Admin,DB: Phase 1: Registration of Critical Monitored Asset with Auto-Lock
+    Admin->>UI: Register Folder as "CRITICAL" & define Unlock Password
+    UI->>API: POST /files/register?file_path=C:\Target&tier=critical&unlock_password=Pass
+    API->>ACL: lock_path(C:\Target)
+    ACL->>FS: Execute icacls C:\Target /deny Everyone:(W,AD,WEA,WA) /T /C /Q
+    FS-->>ACL: Discretionary ACL Applied (Write Access Denied)
+    API->>Vault: Create encrypted pre-lock baseline snapshot
+    Vault->>FS: Mirror and compress files
+    Vault-->>API: Snapshot encrypted (AES-256-GCM)
+    API->>DB: INSERT INTO baselines (path, SHA-256, is_locked=1, pwd_hash)
+    API->>DB: INSERT INTO audit_log (action="REGISTER_CRITICAL_AUTOLOCK", outcome="SUCCESS")
+    API-->>UI: 200 OK: Asset Registered, Secured & Auto-Locked
+    UI-->>Admin: Display 🔒 "Locked (DENY Write)" & 🔑 "Protected" Badges
+    end
+
+    %% Phase 2: Active Adversarial Attack Neutralization
+    rect rgb(255, 240, 245)
+    Note over Attacker,Notify: Phase 2: Adversarial Attack & Kernel-Level Prevention
+    Attacker->>FS: Executes bulk modification / XOR encryption attack
+    FS--xAttacker: ACCESS DENIED (0x80070005) enforced by Windows NT Kernel!
+    Note over FS,Attacker: Attack Neutralized: Zero bytes encrypted or tampered!
+    Watch->>FS: Intercepts low-level access denial & mutation attempts
+    Watch->>API: Transmit event: ACCESS_DENIED / TAMPER_ATTEMPT (PID, ProcessName)
+    API->>DB: Log incident in events and alerts tables
+    API->>Notify: Trigger emergency alert (Twilio SMS & Resend Email)
+    Notify-->>Admin: SMS & Email: "CRITICAL: Unauthorized Tamper Attempt Blocked on C:\Target"
+    end
+
+    %% Phase 3: Password-Gated Maintenance & Self-Healing Rollback
+    rect rgb(245, 255, 250)
+    Note over Admin,Vault: Phase 3: Password-Gated Maintenance & Vault Rollback
+    Admin->>UI: Clicks 🔒 "Locked" to perform authorized maintenance
+    UI-->>Admin: Prompts for Folder Unlock Passphrase in modal
+    Admin->>UI: Enters Unlock Password
+    UI->>API: POST /access/unlock (path=C:\Target, password=Pass)
+    API->>DB: Query unlock_password_hash from baselines
+    DB-->>API: Return stored SHA-256 hash
+    
+    alt Password Verification Fails
+        API->>DB: INSERT INTO audit_log (action="UNLOCK_PATH", outcome="FAILED_INVALID_PASSWORD")
+        API-->>UI: 403 Forbidden: "Incorrect unlock password"
+        UI-->>Admin: Display Red Alert Banner: Access Denied
+    else Password Verification Passes
+        API->>ACL: unlock_path(C:\Target)
+        ACL->>FS: Execute icacls C:\Target /remove:d Everyone /T /C /Q
+        FS-->>ACL: DENY ACL removed, standard access restored
+        API->>DB: UPDATE baselines SET is_locked=0
+        API->>DB: INSERT INTO audit_log (action="UNLOCK_PATH", outcome="SUCCESS")
+        API-->>UI: 200 OK: "Write access RESTORED"
+        UI-->>Admin: Update Badge to 🔓 "Unlocked"
+    end
+
+    opt Emergency Self-Healing Rollback
+        Admin->>UI: Clicks "Rollback to Clean Baseline"
+        UI->>API: POST /rollback/execute (file_path=C:\Target\file.txt)
+        API->>Vault: Retrieve encrypted mirror snapshot
+        Vault->>Vault: Decrypt payload via AES-256-GCM & verify SHA-256
+        Vault->>FS: Overwrite target with verified pristine baseline
+        API->>DB: Update baselines and log audit event
+        API-->>UI: 200 OK: "File restored to verified baseline"
+        UI-->>Admin: Green Toast: "Asset restored with 100% fidelity"
+    end
+    end
