@@ -1,6 +1,17 @@
 import os
+import sys
+import uuid
+import hashlib
+import logging
+from datetime import datetime
+from typing import List, Optional
 from fastapi import APIRouter, Depends, Request
-from typing import List
+
+# Add service directory to path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'service'))
+from service.access_controller import AccessController
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -23,12 +34,20 @@ def get_monitored_files(db = Depends(get_db)):
         files.append({
             "file_path": r_dict.get("file_path", ""),
             "tier": r_dict.get("tier", "standard"),
-            "is_locked": bool(r_dict.get("is_locked", 0))
+            "is_locked": bool(r_dict.get("is_locked", 0)),
+            "has_password": bool(r_dict.get("unlock_password_hash"))
         })
     return files
 
 @router.post("/register")
-def register_file(file_path: str, tier: str = "standard", db = Depends(get_db), config = Depends(get_config)):
+def register_file(
+    file_path: str,
+    tier: str = "standard",
+    unlock_password: Optional[str] = None,
+    request: Optional[Request] = None,
+    db = Depends(get_db),
+    config = Depends(get_config)
+):
     file_path = os.path.abspath(file_path)
     
     # Sync with config file
@@ -38,11 +57,61 @@ def register_file(file_path: str, tier: str = "standard", db = Depends(get_db), 
         config.config_data["monitored_paths"] = paths
         config.save_config()
 
-    db.execute(
-        "INSERT OR IGNORE INTO baselines (file_path, current_hash, tier) VALUES (?, 'PENDING', ?)",
-        (file_path, tier)
-    )
-    return {"status": "registered", "file_path": file_path, "tier": tier}
+    pwd_hash = None
+    if unlock_password and unlock_password.strip():
+        pwd_hash = hashlib.sha256(unlock_password.strip().encode()).hexdigest()
+
+    is_locked = 0
+    if tier.lower() == "critical" and os.path.exists(file_path):
+        # Auto-lock critical assets immediately with NTFS DENY ACL
+        locked_ok = AccessController.lock_path(file_path)
+        is_locked = 1 if locked_ok else 0
+
+    try:
+        db.execute(
+            "INSERT INTO baselines (file_path, current_hash, tier, is_locked, unlock_password_hash) "
+            "VALUES (?, 'PENDING', ?, ?, ?) "
+            "ON CONFLICT(file_path) DO UPDATE SET "
+            "tier = excluded.tier, is_locked = excluded.is_locked, "
+            "unlock_password_hash = COALESCE(excluded.unlock_password_hash, baselines.unlock_password_hash)",
+            (file_path, tier, is_locked, pwd_hash)
+        )
+    except Exception:
+        db.execute(
+            "INSERT OR REPLACE INTO baselines (file_path, current_hash, tier, is_locked, unlock_password_hash) "
+            "VALUES (?, 'PENDING', ?, ?, ?)",
+            (file_path, tier, is_locked, pwd_hash)
+        )
+
+    # Record in audit log
+    actor = "admin"
+    ip = "127.0.0.1"
+    if request:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer mock_jwt_token_for_"):
+            actor = auth_header.replace("Bearer mock_jwt_token_for_", "").strip() or "admin"
+        if request.client and request.client.host:
+            ip = request.client.host
+
+    action = "REGISTER_CRITICAL_AUTOLOCK" if is_locked else "REGISTER_ASSET"
+    try:
+        now = datetime.now().isoformat()
+        session_id = str(uuid.uuid4())
+        db.execute(
+            "INSERT INTO audit_log (actor, action, target, outcome, ip_address, session_id, performed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (actor, action, file_path, "SUCCESS", ip, session_id, now)
+        )
+    except Exception as e:
+        logger.error(f"Audit log failed on register: {e}")
+
+    return {
+        "status": "registered",
+        "file_path": file_path,
+        "tier": tier,
+        "is_locked": bool(is_locked),
+        "has_password": bool(pwd_hash)
+    }
 
 @router.delete("/unregister")
 def unregister_file(file_path: str, db = Depends(get_db), config = Depends(get_config)):

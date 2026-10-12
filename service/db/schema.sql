@@ -3,7 +3,8 @@ CREATE TABLE baselines (
     file_path TEXT UNIQUE NOT NULL,
     current_hash TEXT NOT NULL,
     tier TEXT DEFAULT 'standard',  -- 'critical' | 'standard' | 'informational'
-    is_locked INTEGER DEFAULT 0
+    is_locked INTEGER DEFAULT 0,
+    unlock_password_hash TEXT DEFAULT NULL
 );
 
 CREATE TABLE events (

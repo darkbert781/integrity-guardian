@@ -56,3 +56,32 @@ class AccessController:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to unlock path {path}. Output: {e.stderr}")
             return False
+
+    @staticmethod
+    def get_acl_status(path: str):
+        """
+        Queries icacls to check current ACL state and whether DENY Write is active.
+        """
+        if not os.path.exists(path):
+            return {
+                "exists": False,
+                "is_deny_write_active": False,
+                "raw_output": f"Path not found: {path}"
+            }
+        try:
+            res = subprocess.run(['icacls', path], capture_output=True, text=True, check=True)
+            output = res.stdout.strip()
+            # Check for DENY entry for Everyone
+            is_deny = "Everyone:(DENY)" in output or "Everyone:(W" in output or ":(DENY)" in output
+            return {
+                "exists": True,
+                "is_deny_write_active": is_deny,
+                "raw_output": output
+            }
+        except subprocess.CalledProcessError as e:
+            return {
+                "exists": True,
+                "is_deny_write_active": False,
+                "raw_output": e.stderr.strip() or str(e)
+            }
+
