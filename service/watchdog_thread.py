@@ -2,6 +2,7 @@ import threading
 import time
 import logging
 import os
+from typing import Any, Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -12,6 +13,8 @@ class IGEventHandler(FileSystemEventHandler):
         self.baseline_manager = baseline_manager
 
     def on_created(self, event):
+        if not self.baseline_manager:
+            return
         self.baseline_manager.handle_event({
             'operation': 'CREATED',
             'file_path': event.src_path,
@@ -20,6 +23,8 @@ class IGEventHandler(FileSystemEventHandler):
         })
 
     def on_modified(self, event):
+        if not self.baseline_manager:
+            return
         self.baseline_manager.handle_event({
             'operation': 'MODIFIED',
             'file_path': event.src_path,
@@ -28,6 +33,8 @@ class IGEventHandler(FileSystemEventHandler):
         })
 
     def on_deleted(self, event):
+        if not self.baseline_manager:
+            return
         self.baseline_manager.handle_event({
             'operation': 'DELETED',
             'file_path': event.src_path,
@@ -36,7 +43,7 @@ class IGEventHandler(FileSystemEventHandler):
         })
 
     def on_moved(self, event):
-        if event.is_directory:
+        if event.is_directory or not self.baseline_manager:
             return
         # Translate move/rename to MODIFIED for the destination file.
         # This handles Office apps (Word, Excel, PPT) which save by writing a temp
@@ -56,7 +63,7 @@ class WatchdogThread(threading.Thread):
         self.service = service
         self.running = False
         self.observer = Observer()
-        self.baseline_manager = None
+        self.baseline_manager: Any = None
         self.config = None
         
     def run(self):
@@ -71,11 +78,16 @@ class WatchdogThread(threading.Thread):
 
         while self.running:
             try:
+                bm = self.baseline_manager
+                if bm is None:
+                    time.sleep(1)
+                    continue
+
                 # Derive watched dirs from the baselines DB table — this is the shared
                 # source of truth between the API process and this service process.
                 # The API writes new registrations to the DB, so reading from here
                 # ensures we always pick up new paths without needing a config reload.
-                rows = self.baseline_manager.db.query("SELECT file_path, current_hash, tier FROM baselines")
+                rows = bm.db.query("SELECT file_path, current_hash, tier FROM baselines")
                 current_dirs = set()
                 for row in rows:
                     path = row['file_path']
@@ -91,7 +103,7 @@ class WatchdogThread(threading.Thread):
 
                     # Automatically build baseline for newly registered paths
                     if row['current_hash'] == 'PENDING':
-                        self.baseline_manager.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
+                        bm.db.execute("UPDATE baselines SET current_hash='MONITORED' WHERE file_path=?", (path,))
                         
                         # Apply preventative access control (NTFS ACL Hardening) for critical paths
                         if row['tier'] == 'critical':
@@ -102,9 +114,9 @@ class WatchdogThread(threading.Thread):
                                 logger.error(f"Access Controller failed to lock path {path}: {ex}")
 
                         if is_dir:
-                            threading.Thread(target=self.baseline_manager._process_directory, args=(path, True, row['tier']), daemon=True).start()
+                            threading.Thread(target=bm._process_directory, args=(path, True, row['tier']), daemon=True).start()
                         elif os.path.exists(path):
-                            threading.Thread(target=self.baseline_manager._add_or_update_file, args=(path, row['tier']), daemon=True).start()
+                            threading.Thread(target=bm._add_or_update_file, args=(path, row['tier']), daemon=True).start()
 
                 # new dirs to watch
                 for d in current_dirs - watched_dirs:

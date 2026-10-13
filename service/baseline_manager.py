@@ -13,7 +13,7 @@ from config_manager import ConfigManager
 logger = logging.getLogger(__name__)
 
 class BaselineManager:
-    def __init__(self, db_manager: DatabaseManager, config_manager: ConfigManager, alert_manager=None, rollback_engine=None):
+    def __init__(self, db_manager: Any, config_manager: Any, alert_manager: Any = None, rollback_engine: Any = None):
         self.db = db_manager
         self.config = config_manager
         self.alert_manager = alert_manager

@@ -38,7 +38,7 @@ class AlertManager:
         device_id = os.environ.get("TEXTBEE_DEVICE_ID")
         to_phone = os.environ.get("ALERT_PHONE_NUMBER")
         
-        if not all([api_key, device_id, to_phone]) or to_phone == "your_personal_phone_number":
+        if not api_key or not device_id or not to_phone or to_phone == "your_personal_phone_number":
             logger.info("TextBee SMS not fully configured in .env. Skipping SMS alert.")
             return
             
@@ -50,8 +50,8 @@ class AlertManager:
         try:
             # Using TextBee to route SMS through the user's Android phone
             url = f"https://api.textbee.dev/api/v1/gateway/devices/{device_id}/send-sms"
-            headers = {
-                "x-api-key": api_key,
+            headers: dict[str, str] = {
+                "x-api-key": str(api_key),
                 "Content-Type": "application/json"
             }
             payload = {

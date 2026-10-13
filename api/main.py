@@ -1,6 +1,7 @@
 import sys
 import os
 import hashlib
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,18 +12,8 @@ from service.rollback_engine import RollbackEngine
 
 from .routers import auth, events, alerts, baseline, files, rollback, compliance, query, settings, system, access
 
-app = FastAPI(title="Integrity Guardian API", version="2.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:7890", "*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     config_path = os.path.join(os.environ.get('PROGRAMDATA', 'C:\\ProgramData'), 'IntegrityGuardian', 'ig-config.json')
     if not os.path.exists(config_path):
         config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "ig-config.json")
@@ -54,6 +45,17 @@ def startup_event():
     app.state.db_manager = db_manager
     app.state.config_manager = config_manager
     app.state.rollback_engine = RollbackEngine(db_manager, vault_path, machine_guid)
+    yield
+
+app = FastAPI(title="Integrity Guardian API", version="2.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:7890", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db(request: Request):
     return request.app.state.db_manager

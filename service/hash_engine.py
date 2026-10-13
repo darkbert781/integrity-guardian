@@ -5,7 +5,7 @@ try:
 except ImportError:
     blake3 = None
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class HashEngine:
     CHUNK_SIZE = 65536
     
     @staticmethod
-    def _read_chunks(file_path: str):
+    def _read_chunks(file_path: str) -> Iterator[bytes]:
         """Reads file in chunks to avoid memory exhaustion. Handles locked files (mostly)."""
         # Python's built-in open() uses sharing modes that might fail if file is strictly locked.
         # For production Windows, we use win32file to explicitly specify share modes.
@@ -36,23 +36,26 @@ class HashEngine:
                 )
                 try:
                     while True:
-                        hr, data = win32file.ReadFile(handle, HashEngine.CHUNK_SIZE)
+                        hr, data = win32file.ReadFile(int(handle), HashEngine.CHUNK_SIZE)
                         if not data:
                             break
-                        yield data
+                        chunk_bytes = data if isinstance(data, bytes) else str(data).encode("utf-8")
+                        yield chunk_bytes
                 finally:
-                    win32file.CloseHandle(handle)
+                    win32file.CloseHandle(int(handle))
             except pywintypes.error as e:
                 logger.warning(f"win32file error reading {file_path}: {e}")
                 # Fallback to standard open
                 with open(file_path, 'rb') as f:
                     while chunk := f.read(HashEngine.CHUNK_SIZE):
-                        yield chunk
+                        chunk_bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                        yield chunk_bytes
         except ImportError:
             # Fallback for non-Windows or if pywin32 is not installed
             with open(file_path, 'rb') as f:
                 while chunk := f.read(HashEngine.CHUNK_SIZE):
-                    yield chunk
+                    chunk_bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                    yield chunk_bytes
         except Exception as e:
             logger.warning(f"Could not read {file_path} for hashing: {e}")
             raise
@@ -65,7 +68,8 @@ class HashEngine:
         hasher = hashlib.sha256()
         try:
             for chunk in cls._read_chunks(file_path):
-                hasher.update(chunk)
+                chunk_bytes: bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                hasher.update(chunk_bytes)
             return hasher.hexdigest()
         except Exception:
             return None
@@ -78,7 +82,8 @@ class HashEngine:
         hasher = blake3.blake3()
         try:
             for chunk in cls._read_chunks(file_path):
-                hasher.update(chunk)
+                chunk_bytes: bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                hasher.update(chunk_bytes)
             return hasher.hexdigest()
         except Exception:
             return None
