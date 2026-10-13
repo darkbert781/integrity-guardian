@@ -51,7 +51,7 @@ class AlertManager:
             # Using TextBee to route SMS through the user's Android phone
             url = f"https://api.textbee.dev/api/v1/gateway/devices/{device_id}/send-sms"
             headers: dict[str, str] = {
-                "x-api-key": str(api_key),
+                "x-api-key": api_key,
                 "Content-Type": "application/json"
             }
             payload = {

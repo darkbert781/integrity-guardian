@@ -39,7 +39,7 @@ class HashEngine:
                         hr, data = win32file.ReadFile(int(handle), HashEngine.CHUNK_SIZE)
                         if not data:
                             break
-                        chunk_bytes = data if isinstance(data, bytes) else str(data).encode("utf-8")
+                        chunk_bytes = data if isinstance(data, bytes) else data.encode("utf-8")
                         yield chunk_bytes
                 finally:
                     win32file.CloseHandle(int(handle))
@@ -48,13 +48,13 @@ class HashEngine:
                 # Fallback to standard open
                 with open(file_path, 'rb') as f:
                     while chunk := f.read(HashEngine.CHUNK_SIZE):
-                        chunk_bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                        chunk_bytes = chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
                         yield chunk_bytes
         except ImportError:
             # Fallback for non-Windows or if pywin32 is not installed
             with open(file_path, 'rb') as f:
                 while chunk := f.read(HashEngine.CHUNK_SIZE):
-                    chunk_bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
+                    chunk_bytes = chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
                     yield chunk_bytes
         except Exception as e:
             logger.warning(f"Could not read {file_path} for hashing: {e}")
@@ -68,8 +68,7 @@ class HashEngine:
         hasher = hashlib.sha256()
         try:
             for chunk in cls._read_chunks(file_path):
-                chunk_bytes: bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
-                hasher.update(chunk_bytes)
+                hasher.update(chunk)
             return hasher.hexdigest()
         except Exception:
             return None
@@ -82,8 +81,7 @@ class HashEngine:
         hasher = blake3.blake3()
         try:
             for chunk in cls._read_chunks(file_path):
-                chunk_bytes: bytes = chunk if isinstance(chunk, bytes) else str(chunk).encode("utf-8")
-                hasher.update(chunk_bytes)
+                hasher.update(chunk)
             return hasher.hexdigest()
         except Exception:
             return None
