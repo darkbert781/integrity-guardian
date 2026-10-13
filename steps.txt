@@ -39,7 +39,7 @@ The dashboard provides a visual interface for events and alerts.
    > cd C:\Users\Alinaswe\Desktop\integrity_guardian\dashboard
 3. Start the UI:
    > npm run dev
-4. Open your browser to http://localhost:3000
+4. Open your browser to http://localhost:5173
 
 ---
 
