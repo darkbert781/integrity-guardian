@@ -44,7 +44,7 @@ def register_file(
     file_path: str,
     tier: str = "standard",
     unlock_password: Optional[str] = None,
-    request: Optional[Request] = None,
+    request: Request = Depends(lambda r: r),
     db = Depends(get_db),
     config = Depends(get_config)
 ):
@@ -86,12 +86,11 @@ def register_file(
     # Record in audit log
     actor = "admin"
     ip = "127.0.0.1"
-    if request:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer mock_jwt_token_for_"):
-            actor = auth_header.replace("Bearer mock_jwt_token_for_", "").strip() or "admin"
-        if request.client and request.client.host:
-            ip = request.client.host
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer mock_jwt_token_for_"):
+        actor = auth_header.replace("Bearer mock_jwt_token_for_", "").strip() or "admin"
+    if request.client and request.client.host:
+        ip = request.client.host
 
     action = "REGISTER_CRITICAL_AUTOLOCK" if is_locked else "REGISTER_ASSET"
     try:
