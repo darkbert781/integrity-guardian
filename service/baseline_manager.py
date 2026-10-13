@@ -6,9 +6,14 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime
 
-from db.db_manager import DatabaseManager
-from hash_engine import HashEngine
-from config_manager import ConfigManager
+try:
+    from db.db_manager import DatabaseManager
+    from hash_engine import HashEngine
+    from config_manager import ConfigManager
+except ImportError:
+    from service.db.db_manager import DatabaseManager
+    from service.hash_engine import HashEngine
+    from service.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +125,8 @@ class BaselineManager:
 
     def _hash_with_retry(self, file_path: str, retries: int = 5, delay: float = 0.5):
         """Hash a file with retries in case the file is still being written."""
+        sha256: Optional[str] = None
+        blake3: Optional[str] = None
         for attempt in range(retries):
             sha256, blake3 = HashEngine.hash_file(file_path)
             # e3b0c44... is the SHA-256 of an empty file — retry if file appears empty
@@ -133,7 +140,8 @@ class BaselineManager:
         if self._is_internal_file(file_path):
             return
         is_dir = os.path.isdir(file_path)
-        sha256 = "dir"
+        sha256: Optional[str] = "dir"
+        blake3: Optional[str] = None
         if not is_dir:
             sha256, blake3 = self._hash_with_retry(file_path)
             if not sha256:
