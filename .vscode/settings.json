@@ -1,0 +1,20 @@
+{
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "css.customData": [],
+
+  "tailwindCSS.includeLanguages": {
+    "javascript": "javascript",
+    "jsx": "javascript"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/venv_packages",
+    "${workspaceFolder}/service"
+  ],
+  "python.analysis.ignore": ["**/venv_packages/**"]
+}

@@ -1,0 +1,46 @@
+; Minimal INF template for a Windows file-system minifilter.
+; This is a project skeleton only and must be finalized using the WDK Driver Package template
+; and a valid signed driver package in a Windows development environment.
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = "Filter"
+ClassGuid   = {b1d0f7cf-5d58-4f44-8651-0c7fd7c4ac00}
+Provider    = %ProviderName%
+CatalogFile = IGMinifilter.cat
+DriverVer   = 10/13/2026,1.0.0.0
+
+[Manufacturer]
+%ProviderName% = IGMinifilter,NTamd64
+
+[IGMinifilter.NTamd64]
+%DeviceDescription% = Install, Instances\IGMinifilter
+
+[Install]
+CopyFiles = @ig_driver.sys
+AddReg = AddRegSection
+
+[AddRegSection]
+HKR, , Instance1, 0x00010000, "IGMinifilter"
+
+[Install.Services]
+AddService = IGMinifilter, , ServiceInstallSection
+
+[ServiceInstallSection]
+DisplayName   = %DisplayName%
+ServiceBinary = %12%\ig_driver.sys
+ServiceDll    = %12%\ig_driver.sys
+StartType     = 0x00000003
+ErrorControl  = 0x00000001
+ServiceType   = 0x00000002
+
+[SourceDisksNames]
+1 = %DiskDescription%,,,.
+
+[SourceDisksFiles]
+ig_driver.sys = 1
+
+[Strings]
+ProviderName = "Integrity Guardian"
+DisplayName = "Integrity Guardian Minifilter"
+DeviceDescription = "Integrity Guardian Protected File Filter"
+DiskDescription = "Integrity Guardian Driver Disk"

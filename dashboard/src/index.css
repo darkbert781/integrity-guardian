@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: #F7F9F8;
+  color: #101816;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Card ──────────────────────────────────────────────────────── */
+.enterprise-card {
+  background: #FFFFFF;
+  border: 1px solid #E6EBE9;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+}
+
+.enterprise-card:hover {
+  border-color: #D0D9D6;
+  box-shadow: 0 4px 8px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+}
+
+/* ── Sidebar nav hover ─────────────────────────────────────────── */
+.sidebar-link-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+/* ── Active Nav Link ───────────────────────────────────────────── */
+.nav-link-active {
+  background: #0E7C66 !important;
+  color: #FFFFFF !important;
+  border-left: 3px solid #14B891 !important;
+  font-weight: 600;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* ── Table ─────────────────────────────────────────────────────── */
+.enterprise-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.enterprise-table th {
+  background: #F7F9F8;
+  border-bottom: 1px solid #E6EBE9;
+  border-top: 1px solid #E6EBE9;
+  color: #667370;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 14px 20px;
+  text-align: left;
+}
+
+.enterprise-table th:first-child { border-top-left-radius: 8px; }
+.enterprise-table th:last-child  { border-top-right-radius: 8px; }
+
+.enterprise-table td {
+  border-bottom: 1px solid #E6EBE9;
+  padding: 14px 20px;
+  color: #101816;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.enterprise-table tr:hover td {
+  background: #F7F9F8;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: #F7F9F8; }
+::-webkit-scrollbar-thumb  { background: #C4CFCB; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9FB3AE; }

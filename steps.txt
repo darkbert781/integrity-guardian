@@ -1,0 +1,64 @@
+Integrity Guardian - Foolproof Manual Testing Guide
+
+Follow these steps exactly to run the system after you restart your computer. The system has been configured to monitor a dedicated test folder so you can test email alerts and dynamic tracking instantly without waiting for a massive initial system scan.
+
+### Prerequisites (Do this once)
+Create a test folder on your desktop if it doesn't exist:
+    > mkdir C:\Users\Alinaswe\Desktop\ig_test_folder
+
+---
+
+### Step 1: Start the API Backend FIRST
+The API manages the database schema. It MUST be started before the Core Service to ensure the database tables are ready.
+
+1. Open a new PowerShell terminal.
+2. Navigate to the project directory:
+   > cd C:\Users\Alinaswe\Desktop\integrity_guardian
+3. Run the API:
+   > python run_api.py
+4. Wait until you see "Application startup complete" and "Uvicorn running on http://0.0.0.0:7890".
+
+---
+
+### Step 2: Start the Core Monitoring Service
+This is the engine that watches your files and sends email alerts.
+
+1. Open a second PowerShell terminal.
+2. Navigate to the project directory.
+3. Run the Core Service:
+   > python service/run_standalone.py
+4. You will see it instantly rebuild the baseline for `ig_test_folder`.
+
+---
+
+### Step 3: Start the Frontend Dashboard
+The dashboard provides a visual interface for events and alerts.
+
+1. Open a third PowerShell terminal.
+2. Navigate to the dashboard directory:
+   > cd C:\Users\Alinaswe\Desktop\integrity_guardian\dashboard
+3. Start the UI:
+   > npm run dev
+4. Open your browser to http://localhost:3000
+
+---
+
+### Step 4: Test the Live System!
+Now that all three components are running, you can test the real-time event pipeline and email alerts.
+
+1. Open a fourth PowerShell terminal (or just use File Explorer).
+2. Create a new folder inside your test directory:
+   > mkdir C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder
+3. Create a file inside that new folder:
+   > echo "Hello World" > C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
+4. Modify the file:
+   > echo "Modified" >> C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
+5. Delete the file:
+   > del C:\Users\Alinaswe\Desktop\ig_test_folder\my_dynamic_folder\hello.txt
+
+**Check your inbox and dashboard!** 
+You should instantly receive professional HTML email alerts for the folder creation, the file creation, the modification, and the deletion. You can also view these events flowing into your Dashboard in real-time.
+
+*Dynamic Registration: You can monitor ANY new folder instantly while the system is running! Simply use the CLI to register it:*
+   > python cli/ig.py register "C:\Path\To\Your\New\Folder"
+*The Core Service will instantly pick it up and begin monitoring it in real-time without requiring a res

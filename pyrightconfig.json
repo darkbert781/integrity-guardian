@@ -1,0 +1,6 @@
+{
+  "extraPaths": [
+    "venv_packages",
+    "service"
+  ]
+}
