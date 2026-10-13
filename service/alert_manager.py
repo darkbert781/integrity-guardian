@@ -1,3 +1,4 @@
+import os
 import logging
 from typing import Dict, Any
 
@@ -16,13 +17,17 @@ class AlertManager:
         self.channels = self.config.get("alert_channels", {})
         logger.info(f"Dispatching {severity} alert for incident: {incident}")
         
-        if self.channels.get("email", {}).get("enabled"):
+        # Email: enabled if explicitly set in config OR if RESEND_API_KEY env var is set
+        email_cfg = self.channels.get("email", {})
+        email_enabled = email_cfg.get("enabled", False) or bool(os.environ.get("RESEND_API_KEY"))
+        
+        if email_enabled:
             self._send_email(incident)
             
         if self.channels.get("teams", {}).get("enabled"):
             self._send_teams(incident)
             
-        # Add SMS support via logging for now
+        # SMS: always attempt for CRITICAL if env vars configured
         self._send_sms(incident)
 
     def _send_sms(self, incident: Dict[str, Any]):
@@ -70,16 +75,18 @@ class AlertManager:
             logger.error(f"Failed to send TextBee SMS: {e}")
 
     def _send_email(self, incident: Dict[str, Any]):
-        import os
         import resend
+        import socket
         
-        api_key = os.environ.get("RESEND_API_KEY", "re_W9XB582X_PNCvW4iL3RucnDVuuzqDM1jc")
+        api_key = os.environ.get("RESEND_API_KEY")
         from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
         to_email = os.environ.get("RESEND_TO_EMAIL", "sibelekijamin@gmail.com")
         
-        resend.api_key = api_key
+        if not api_key:
+            logger.warning("RESEND_API_KEY not set in environment. Skipping email alert.")
+            return
         
-        import socket
+        resend.api_key = api_key
         hostname = socket.gethostname()
         
         severity = incident.get('severity', 'INFO')
